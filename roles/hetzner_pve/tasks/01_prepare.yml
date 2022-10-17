@@ -1,0 +1,53 @@
+---
+
+- name: Check if system already installed
+  register: hetzner_pve_installed
+  stat: path=/etc/hetzner_pve_run
+
+- name: Check if default account already created
+  stat: 
+    path:  /etc/pve/priv/acme/default
+  register: acme_default_registered
+
+- name: Check if SSL certs already created
+  stat: 
+    path:  /etc/pve/local/pveproxy-ssl.pem
+  register: ssl_created
+
+- name: Check if a xshock already run
+  register: hetzner_pve_xshock_installed
+  stat: path=/etc/extremeshok
+
+- name: Check if opnsense exists
+  stat: 
+    path:  "/etc/pve/qemu-server/{{ hetzner_pve_opnsense_vm_settings.id }}"
+  register: hetzner_pve_opnsense_installed
+
+- name: Deploy setup config for installimage
+  ansible.builtin.template:
+    src: setup_debian11.conf.j2
+    dest: /tmp/setup.conf
+    owner: root
+    group: root
+    mode: '0755'
+  when: hetzner_pve_installed.stat.exists == false
+
+- name: Deploy post-install script
+  ansible.builtin.template:
+    src: post_install.sh.j2
+    dest: /tmp/post_install.sh
+    owner: root
+    group: root
+    mode: '0755'
+  when: hetzner_pve_installed.stat.exists == false
+
+- name: Deploy SSH Keys
+  ansible.builtin.template:
+    src: authorized_keys.j2
+    dest: /tmp/authorized_keys
+  when: hetzner_pve_installed.stat.exists == false
+
+- name: disable mdadm
+  command: "mdadm --stop --scan"
+  when: hetzner_pve_installed.stat.exists == false
+

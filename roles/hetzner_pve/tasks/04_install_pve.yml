@@ -1,0 +1,43 @@
+---
+- name: Change various sysctl-settings
+  sysctl:
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
+    sysctl_set: no
+    state: present
+    reload: yes
+    ignoreerrors: yes
+  with_dict: '{{ sysctl_config }}'
+  
+- name: Set Postfix option type as Local only
+  debconf: 
+    name=postfix 
+    question="postfix/main_mailer_type" 
+    value="'Local only'" 
+    vtype="string"
+
+- name: Install Proxmox
+  ansible.builtin.apt:
+    pkg:
+    - proxmox-ve
+    - postfix
+    - open-iscsi
+    - python3-pip
+    - cloud-init
+    - libguestfs-tools
+    - unzip
+    - sshpass
+    - telnet
+    - expect
+  register: install_pve
+
+- name: Remove Debian kernel 
+  ansible.builtin.apt:
+    pkg:
+    - linux-image-amd64
+    - os-prober
+  when: install_pve.changed
+  notify: restart vmhost
+
+- meta: flush_handlers
+  when: install_pve.changed 

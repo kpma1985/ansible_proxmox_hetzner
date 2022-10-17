@@ -1,0 +1,33 @@
+---
+- name: Creates directory
+  file:
+    path: "/mnt/{{ item.name }}"
+    state: directory
+    mode: 0755
+  register: hetzner_pve_new_folder
+  with_items: "{{ hetzner_pve_storagebox_server }}"
+
+- name: Update fstab
+  blockinfile:
+    path: /etc/fstab
+    state: present
+    block: |
+      //{{ item.name }}/backup /mnt/{{ item.name }} cifs _netdev,username={{ item.user }},password={{ item.pass }},uid=101001,gid=101001 0 0
+  register: hetzner_pve_new_fstab
+  with_items: "{{ hetzner_pve_storagebox_server }}"
+  no_log: true
+
+- name: "Mount share"
+  mount:
+    state: "mounted"
+    fstype: "cifs"
+    name: "/mnt/{{ item.name }}"
+    src: "//{{ item.name }}/backup"
+    opts: "username={{ item.user }},password={{ item.pass }},uid=101001,gid=101001"
+  with_items: "{{ hetzner_pve_storagebox_server }}"
+  no_log: true
+    
+- name: Add storage to proxmox
+  shell: "pvesm add dir {{ item.name }} --path /mnt/{{ item.name }}"
+  with_items: "{{ hetzner_pve_storagebox_server }}"
+  when: hetzner_pve_new_folder.changed

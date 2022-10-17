@@ -1,0 +1,11 @@
+---
+
+- name: restart vmhost
+  include_tasks: tasks/handlers/restart.yml
+
+- name: restart nginx
+  service:
+    name: nginx
+    state: restarted
+
+  

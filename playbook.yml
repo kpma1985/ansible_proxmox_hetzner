@@ -1,0 +1,7 @@
+---
+- name: 'Install PROXMOX'
+  hosts: vmhost
+  user: root
+  gather_facts: yes
+  roles:
+    - { role: hetzner_pve }

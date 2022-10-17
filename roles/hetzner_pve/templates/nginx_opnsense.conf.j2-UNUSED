@@ -1,0 +1,17 @@
+upstream opnsense {
+          server "{{ hetzner_pve_acme_domain }}";
+      }
+
+      server {
+          listen  443 ssl;
+          ssl_certificate /etc/pve/local/pve-ssl.pem;
+          ssl_certificate_key /etc/pve/local/pve-ssl.key;
+          proxy_redirect off;
+          location / {
+                allow {{ ipify_public_ip  }};
+                deny all;
+                proxy_set_header Host 192.168.1.1; # required to avoid DNS rebind attack warnings
+                proxy_set_header Referer https://192.168.1.1; # require to avoid wrong HTTP_REFERER warnings
+                proxy_pass https://192.168.1.1;
+          }
+      }

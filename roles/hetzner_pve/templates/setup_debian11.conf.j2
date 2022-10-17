@@ -1,0 +1,15 @@
+CRYPTPASSWORD {{ hetzner_pve_luks_pass }}
+
+DRIVE1 /dev/nvme0n1
+DRIVE2 /dev/nvme1n1
+
+SWRAID 1
+
+BOOTLOADER grub
+HOSTNAME {{ inventory_hostname }}
+
+PART /boot/efi esp 256M
+PART /boot ext4 2G
+PART /     ext4 all crypt
+IMAGE /root/.oldroot/nfs/images/Debian-1101-bullseye-amd64-base.tar.gz
+SSHKEYS_URL /tmp/authorized_keys

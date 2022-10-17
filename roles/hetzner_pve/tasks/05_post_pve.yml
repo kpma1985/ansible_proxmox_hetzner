@@ -1,0 +1,70 @@
+---
+- name: install pexpect
+  pip:
+    name: pexpect
+  when: acme_default_registered.stat.exists == false
+
+- name: Create ACME account
+  expect:
+    command: "pvenode acme account register default {{ hetzner_pve_acme_mail }} --directory {{ hetzner_pve_acme_server }}"
+    responses:
+      "Do you agree to the above terms?" : 'y'
+    echo: yes
+  when: 
+    - acme_default_registered.stat.exists == false
+    - hetzner_pve_create_acme
+    
+- name: Create SSL Certificate
+  command: "{{ item }}"
+  with_items:
+   - "pvenode config set --acme domains={{ hetzner_pve_acme_domain }}"
+   - "pvenode acme cert order"
+  register: acme_result
+  when:
+    - ssl_created.stat.exists == false
+    - hetzner_pve_create_acme
+
+- name: Deploy post-install script
+  ansible.builtin.copy:
+    src: xs-install-post.sh
+    dest: /tmp/xs-install-post.sh
+    owner: root
+    group: root
+    mode: '0755'
+  when: hetzner_pve_xshock_installed.stat.exists == false
+
+- name: Deploy xshock post-install-settings
+  ansible.builtin.template:
+    src: xs-post-install.env.j2
+    dest: /tmp/xs-install-post.env
+    owner: root
+    group: root
+    mode: '0644'
+  when: hetzner_pve_xshock_installed.stat.exists == false
+
+- name: Running xshock post-install script
+  ansible.builtin.shell: /tmp/xs-install-post.sh
+  register: xshock_run
+  when: hetzner_pve_xshock_installed.stat.exists == false
+
+### Remove cisofy repo - breaks "apt update"
+- name: remove unused repository
+  file:
+    path: /etc/apt/sources.list.d/cisofy-lynis.list
+    state: absent
+
+- name: Update debian repositories
+  ansible.builtin.template:
+    src: sources.list.j2
+    dest: /etc/apt/sources.list
+    mode: 0644
+
+- name: Install custom packages
+  ansible.builtin.apt:
+    pkg: "{{ item }}"
+    update_cache: yes
+  with_items: "{{ hetzner_pve_custom_packages }}"
+  notify: restart vmhost
+
+- meta: flush_handlers
+  when:  xshock_run.changed 

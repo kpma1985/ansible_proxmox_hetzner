@@ -1,0 +1,40 @@
+#
+# https://github.com/kpma1985/ansible_proxmox_hetzner
+#
+
+auto lo
+iface lo inet loopback
+
+
+###
+#  Fake macaddress for real interface 
+###
+auto {{ ansible_default_ipv4.interface }}
+iface {{ ansible_default_ipv4.interface }} inet manual
+        hwaddress ether {{ '52:54:00' | random_mac }}
+
+
+###
+#  Bridge opnsense VM to WAN
+###
+auto {{ hetzner_pve_opnsense_vm_settings.wan_bridge }}
+iface {{ hetzner_pve_opnsense_vm_settings.wan_bridge }} inet static
+        bridge-ports {{ ansible_default_ipv4.interface }}
+        bridge-stp off
+        bridge-fd 0
+        bridge_maxwait 0
+
+###
+#  {{ hetzner_pve_network_vm_lan_ip }} used by opnsense
+###
+auto {{ hetzner_pve_opnsense_vm_settings.lan_bridge }}
+iface {{ hetzner_pve_opnsense_vm_settings.lan_bridge }} inet static
+        address {{ hetzner_pve_network_lan_ip }}/{{ hetzner_pve_network_lan_subnet }}
+        gateway {{ hetzner_pve_network_vm_lan_ip }}
+        bridge-ports none
+        bridge-stp off
+        bridge-fd 0
+        bridge_maxwait 0
+
+
+source /etc/network/interfaces.d/*        

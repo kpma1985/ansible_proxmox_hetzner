@@ -1,0 +1,27 @@
+---
+- name: Download cloud-init template
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "/tmp/{{ item.name }}.img"
+    mode: '0644'
+  with_items: "{{ hetzner_pve_cloud_images }}"
+
+- name: Create Image
+  shell: |
+    qm destroy {{ item.id }}
+    virt-customize -a /tmp/{{ item.name }}.img --install qemu-guest-agent
+    qm create {{ item.id }} --memory {{ item.memory }} --net0 virtio,bridge={{ item.bridge }}
+    qm importdisk {{ item.id }} /tmp/{{ item.name }}.img {{ item.storage }}
+    qm set {{ item.id }} --scsihw virtio-scsi-pci --scsi0 {{ item.storage }}:{{ item.id }}/vm-{{ item.id }}-disk-0.raw
+    qm set {{ item.id }} --ide2 {{ item.storage }}:cloudinit
+    qm set {{ item.id }} --boot c --bootdisk scsi0
+    qm set {{ item.id }} --serial0 socket --vga serial0
+    qm template {{ item.id }}
+    qm set {{ item.id }} --name template.{{ item.name }} --agent 1 --ipconfig0 ip=dhcp --sshkey /root/.ssh/authorized_keys --ciuser {{ item.username }} 
+  with_items: "{{ hetzner_pve_cloud_images }}"
+
+- name: Cleanup templates
+  file:
+    path: "/tmp/{{ item.name }}.img"
+    state: absent
+  with_items: "{{ hetzner_pve_cloud_images }}"

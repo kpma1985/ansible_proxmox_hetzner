@@ -1,0 +1,251 @@
+---
+
+- name: Get puiblic IP - Only allow own IP for nginx
+  ipify_facts:
+  register: public_ip
+  connection: local
+
+# - name: output
+#   debug: msg="{{ public_ip }}"
+
+- name: Install nginx,telnet and expect for proxy opnsense gui
+  ansible.builtin.apt:
+    pkg:
+    - nginx
+    - telnet
+    - expect
+
+- name: Install lxml for parsing xml
+  pip:
+    name: lxml
+
+- name: remove default nginx configs
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: create nginx config
+  ansible.builtin.template:
+    src: nginx_opnsense.conf.j2
+    dest: /etc/nginx/conf.d/proxmox.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart nginx
+  
+- name: Create tmp dir
+  file: 
+    path: /tmp/opnsense_iso
+    state: directory
+    mode: 0755
+
+- name: Get opnsense ISO
+  ansible.builtin.get_url:
+    url: "{{ hetzner_pve_opnsense.url }}"
+    dest: "/tmp/opnsense_iso/{{ hetzner_pve_opnsense.url | basename }}"
+
+- name: extract opnsense image
+  ansible.builtin.shell:
+    cmd: "bzip2 -f -d -v /tmp/opnsense_iso/{{ hetzner_pve_opnsense.url | basename }}"
+
+- name: get filename without prefix #TODO: quick and dirty 
+  find:
+    paths: /tmp/opnsense_iso/
+    patterns: "*.img"
+    recurse: no
+    file_type: file
+  register: found_isos
+
+# - name: Add OPNsense ISO to templates 
+#   ansible.builtin.shell:
+#     cmd: "mv {{ found_isos.files[0].path }} /var/lib/vz/template/iso/{{ found_isos.files[0].path | basename }}"
+
+- name: Create opnsense VM
+  shell: |
+      qm create {{ hetzner_pve_opnsense.id }} \
+      --onboot 1 --agent 1 --name opnsense \
+      --memory {{ hetzner_pve_opnsense.memory }} \
+      --net0 virtio={{ hostvars[inventory_hostname].ansible_default_ipv4.macaddress }},bridge={{ hetzner_pve_opnsense_wan_bridge }},link_down=1 \
+      --net1 virtio,bridge={{ hetzner_pve_opnsense_lan_bridge }} \
+      --args "-serial tcp:192.168.1.2:{{ hetzner_pve_opnsense.id }},server,nowait"
+
+- name: Add OPNsense image to opns
+  ansible.builtin.shell: |
+    qm importdisk {{ hetzner_pve_opnsense.id }} /tmp/opnsense_iso/{{ found_isos.files[0].path | basename }} local
+    qm set {{ hetzner_pve_opnsense.id }} --scsihw virtio-scsi-pci --scsi0 {{ hetzner_pve_opnsense.storage }}:{{ hetzner_pve_opnsense.id }}/vm-{{ hetzner_pve_opnsense.id }}-disk-0.raw
+    qm set {{ hetzner_pve_opnsense.id }} --boot c --bootdisk scsi0
+
+- name: Add Internal bridge for opnsense
+  ansible.builtin.blockinfile:
+    path: /etc/network/interfaces
+    block: |
+      auto {{ hetzner_pve_opnsense_wan_bridge }}
+      iface {{ hetzner_pve_opnsense_wan_bridge }} inet manual
+              bridge-ports none
+              bridge-stp off
+              bridge-fd 0
+
+      auto {{ hetzner_pve_opnsense_lan_bridge }}
+      iface {{ hetzner_pve_opnsense_lan_bridge }} inet static
+              address 192.168.1.2/24
+              bridge-ports none
+              bridge-stp off
+              bridge-fd 0
+  register: pve_temp_bridge
+
+- name: fire up temp bridge and opnsense
+  shell: |
+    ifup {{ hetzner_pve_opnsense_wan_bridge }}
+    ifup {{ hetzner_pve_opnsense_lan_bridge }}
+    qm start {{ hetzner_pve_opnsense.id }}
+  when: pve_temp_bridge
+
+- name: Wait for opnsense coming up
+  wait_for:
+    port: "{{ hetzner_pve_opnsense.id }}"
+    host: "192.168.1.2"
+    delay: 10
+
+- name: Preapare OPNsense SETUP
+  expect:
+    command: "telnet  -e ! 192.168.1.2 {{ hetzner_pve_opnsense.id }}"
+    timeout: 60
+    echo: true
+    responses:
+      'Escape character is':
+        - ''
+      'login: ':
+        - 'root'
+      'Password:':
+        - 'opnsense'
+      'Enter an option:': 
+        - 8
+        - \u001d
+      'root@OPNsense:~ #':
+        - 'pfctl -d'
+        - '/usr/local/etc/rc.d/openssh enable'
+        - '/usr/local/etc/rc.d/openssh start'
+  register: hetzner_pve_setup_opnsense
+  failed_when: hetzner_pve_setup_opnsense.msg is search('disabled')
+
+
+- name: opnsense is ready for setup
+  pause:
+    prompt: |
+      OPNsense is ready to setup
+      
+      Please finish setup OPNsense at 
+      
+      https://{{ hetzner_pve_acme_domain }}
+
+      username: root
+      password: opnsense
+      
+      Press ENTER after finishing the Wizzard (you have to reload)
+
+      Press ENTER to continue or CTRL+C and A to abort...
+
+
+
+
+- name: Getting IP Address
+  expect:
+    command: "telnet  -e ! 192.168.1.2 {{ hetzner_pve_opnsense.id }}"
+    timeout: 60
+    echo: true
+    responses:
+      'Escape character is':
+        - ''
+      'root@OPNsense:~ #':
+        - 'ifconfig vtnet0 | grep inet | awk ''{print $2}'''
+        - '!'
+  failed_when: hetzner_pve_get_new_opnsense_ip.msg is not regex('([0-9]{1,3}[\\.]){3}[0-9]{1,3}')
+  register: hetzner_pve_get_new_opnsense_ip
+
+- set_fact:
+    hetzner_pve_new_opnsense_ip: "{{ hetzner_pve_get_new_opnsense_ip.msg | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') }}"
+
+- name: "Confirm or change the LAN IP Adress for opnsense "
+  pause:
+      prompt: "\nopnsense LAN IP [{{ hetzner_pve_new_opnsense_ip }}]: "
+  register: hetzner_pve_network_local_ip
+
+- debug: msg="{{ hetzner_pve_network_local_ip.user_input if hetzner_pve_network_local_ip.user_input else hetzner_pve_new_opnsense_ip }}"
+
+
+# - name: Getting IP NETMASK
+#   expect:
+#     command: "telnet  -e ! 192.168.1.2 {{ hetzner_pve_opnsense.id }}"
+#     timeout: 60
+#     echo: true
+#     responses:
+#       'Escape character is':
+#         - ''
+#       'root@OPNsense:~ #':
+#         - 'ifconfig vtnet0 | grep inet | awk ''{print $4}'''
+#         - '!'
+#   failed_when: hetzner_pve_get_new_opnsense_netmask.msg is not regex('([0-9]{1,3}[\\.]){3}[0-9]{1,3}')
+#   register: hetzner_pve_get_new_opnsense_netmask
+
+# - set_fact:
+#     hetzner_pve_new_opnsense_netmask: "{{ hetzner_pve_get_new_opnsense_netmask.msg | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') }}"
+
+# - name: "Confirm or change the LAN NETMASK Adress for opnsense "
+#   pause:
+#       prompt: "\nopnsense LAN NETMASK [{{ hetzner_pve_new_opnsense_ip }}]: "
+#   register: hetzner_pve_network_local_netmask
+
+# - debug: msg="{{ hetzner_pve_network_local_netmask.user_input if hetzner_pve_network_local_netmask.user_input else hetzner_pve_new_opnsense_netmask }}"
+
+
+
+
+
+
+
+# - name: Copy File to Local Machine
+#   shell: "sshpass -popnsense scp -o StrictHostKeyChecking=no root@192.168.1.1:/conf/config.xml /tmp/opnsense_config.xml"
+
+# - name: Add a 'phonenumber' element to the 'business' element
+#   community.general.xml:  
+#     path:  /tmp/opnsense_config.xml
+#     xpath: /opnsense/system/disablefilter
+#     value: enabled
+
+
+# - name: Copy File to Local Machine
+#   shell: "sshpass -popnsense scp -o StrictHostKeyChecking=no /tmp/opnsense_config.xml root@192.168.1.1:/conf/config.xml"
+
+# - name: Copy File to Local Machine
+#   shell: "sshpass -popnsense ssh -o StrictHostKeyChecking=no reboot"
+
+
+- name: Update Network Interfaces
+  ansible.builtin.template:
+    src: pve_interfaces.j2
+    dest: /etc/network/interfaces.bak
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+
+
+- name: Add OPNsense image to opns
+  ansible.builtin.shell: |
+    qm set {{ hetzner_pve_opnsense.id }} --net1 link_down=0
+
+
+# - name: Post tasks done - rebooting now
+#   reboot:
+#     post_reboot_delay: 20
+#     test_command: "echo -ne {{ hetzner_pve_luks_pass }} > /lib/cryptsetup/passfifo"
+
+# - name: Wait for system comming up after unlock
+#   wait_for:
+#     port: 22
+#     host: "{{ inventory_hostname }}"
+#     delay: 10
+#   delegate_to: localhost
+
+

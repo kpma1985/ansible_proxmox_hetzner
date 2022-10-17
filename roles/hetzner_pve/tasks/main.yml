@@ -1,0 +1,26 @@
+---
+
+- include_tasks: 01_prepare.yml
+
+- include_tasks: 02_install_os.yml
+  when: hetzner_pve_installed.stat.exists == false
+
+- include_tasks: 03_prepare_pve.yml
+  when: hetzner_pve_installed.stat.exists == false
+
+- include_tasks: 04_install_pve.yml
+  when: hetzner_pve_installed.stat.exists == false
+
+- include_tasks: 05_post_pve.yml
+  when: hetzner_pve_xshock_installed.stat.exists == false
+
+- include_tasks: 07_storagebox.yml
+  when: hetzner_pve_storagebox_setup
+
+- include_tasks: 08_create_templates.yml
+  when: hetzner_pve_cloud_images_setup
+
+- include_tasks: 09_opnsense_prepare.yml
+  when: hetzner_pve_setup_opnsense
+
+

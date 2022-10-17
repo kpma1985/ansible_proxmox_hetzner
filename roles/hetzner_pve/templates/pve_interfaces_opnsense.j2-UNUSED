@@ -1,0 +1,26 @@
+
+auto lo
+iface lo inet loopback
+
+auto {{ ansible_default_ipv4.interface }}
+iface {{ ansible_default_ipv4.interface }} inet manual
+        hwaddress ether {{ '52:54:00' | random_mac }}
+
+auto vmbr0
+iface vmbr0 inet static
+        bridge-ports {{ ansible_default_ipv4.interface }}
+        bridge-stp off
+        bridge-fd 0
+        bridge_maxwait 0
+
+auto {{ hetzner_pve_opnsense_internal_bridge }}
+iface {{ hetzner_pve_opnsense_internal_bridge }} inet static
+        address {{ hetzner_pve_network_lan_ip }}/{{ hetzner_pve_network_lan_subnet }}
+        gateway {{ hetzner_pve_network_vm_lan_ip }}
+        bridge-ports none
+        bridge-stp off
+        bridge-fd 0
+        bridge_maxwait 0
+
+
+source /etc/network/interfaces.d/*        

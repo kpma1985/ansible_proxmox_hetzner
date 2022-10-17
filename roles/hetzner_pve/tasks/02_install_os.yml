@@ -1,0 +1,34 @@
+---
+- name: Run Installimage
+  ansible.builtin.shell: '/root/.oldroot/nfs/install/installimage -a -c /tmp/setup.conf -u yes -x /tmp/post_install.sh'
+  notify: restart vmhost
+
+- meta: flush_handlers
+
+- name: Pause for 15 seconds 
+  pause:
+    seconds: 15
+
+- name: register run of installimage
+  ansible.builtin.file:
+    path: /etc/hetzner_pve_run
+    state: touch
+    mode: u=rw,g=r,o=r
+
+- name: Update root password
+  ansible.builtin.user:
+    name: "root"
+    state: present
+    update_password: always
+    password: "{{ hetzner_pve_root_pass | password_hash('sha512') }}"
+  no_log: true
+
+- name: Slow down raid rebuild temp
+  sysctl:
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
+    sysctl_set: no
+    state: present
+    reload: yes
+    ignoreerrors: yes
+  with_dict: '{{ sysctl_config }}'

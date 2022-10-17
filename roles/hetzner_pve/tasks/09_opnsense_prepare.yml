@@ -1,0 +1,112 @@
+---
+- name: Get puiblic IP - Only allow own IP for nginx
+  ipify_facts:
+  register: public_ip
+  connection: local
+
+- name: Install lxml for parsing xml
+  pip:
+    name: lxml
+
+- name: create tmp usb disk folder
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat
+    - /tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf
+
+- name: get latest config.xml from github
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/opnsense/core/master/src/etc/config.xml.sample
+    dest: /tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml
+
+- name: Setup opnsense 
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/{{ item.key }}"
+    value: "{{ item.value }}"
+    pretty_print: yes
+  with_dict: "{{ hetzner_pve_opnsense_settings }}"
+
+- name: Setup opnsense - LAN Interface (1/2)
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/interfaces/lan/ipaddr"
+    value: "{{ hetzner_pve_network_vm_lan_ip }}"
+    pretty_print: yes
+
+- name: Setup opnsense - LAN Interface (2/2)
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/interfaces/lan/subnet"
+    value: "{{ hetzner_pve_network_lan_subnet }}"
+    pretty_print: yes
+
+- name: Setup opnsense - Disable DHCP Server 
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/dhcpd/lan/enable
+    state: absent
+    pretty_print: yes
+  when:  hetzner_pve_setup_opnsense_settings_lan_dhcpd == false
+
+- name: Setup opnsense - DHCP 1/2
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/dhcpd/lan/range/from"
+    value: "{{ hetzner_pve_network_vm_lan_dhcp_from }}"
+    pretty_print: yes
+
+- name: Setup opnsense - DHCP 2/2
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/dhcpd/lan/range/to"
+    value: "{{ hetzner_pve_network_vm_lan_dhcp_to }}"
+    pretty_print: yes
+
+- name: Allow own ip any
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/filter/rule[descr/text()="OWN_IP"]/pass
+    value: "pass"
+    pretty_print: yes
+
+- name: Allow own ip any
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/filter/rule[descr/text()="OWN_IP"]/interface
+    value: "wan"
+    pretty_print: yes
+
+- name: Allow own ip any
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/filter/rule[descr/text()="OWN_IP"]/source/address
+    value: "{{ ipify_public_ip  }}/32"
+    pretty_print: yes
+    
+- name: Allow own ip any
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/filter/rule[descr/text()="OWN_IP"]/destination/any
+    value: "1"
+    pretty_print: yes
+
+- name: Allow own ip any
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/filter/rule[descr/text()="OWN_IP"]/ipprotocol
+    value: inet
+    pretty_print: yes
+
+- include_tasks: 09_opnsense_prepare_user.yml
+
+- name: Disable wizzard
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/trigger_initial_wizard"
+    state: absent
+  when: opn_unset is defined
+
+- include_tasks: 09_opnsense_create.yml

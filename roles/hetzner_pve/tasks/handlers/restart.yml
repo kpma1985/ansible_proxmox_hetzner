@@ -1,0 +1,12 @@
+---
+- name: Rebooting and unlock 
+  reboot:
+    post_reboot_delay: 20
+    test_command: "echo -ne {{ hetzner_pve_luks_pass }} > /lib/cryptsetup/passfifo"
+
+- name: Wait for system comming up after unlock
+  wait_for:
+    port: 22
+    host: "{{ inventory_hostname }}"
+    delay: 10
+  delegate_to: localhost
