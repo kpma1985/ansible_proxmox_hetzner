@@ -36,6 +36,11 @@ I made this project just for fun, it allows you to create a proxmox host on Hetz
  * `hetzner_pve_network_vm_lan_dhcp_to` [default: "192.168.49.150"]:  OPNsense DHCP range end
 
 
+#### Howto
+
+* ansible-playbook playbook.yml -i inventory/hosts
+* OPNsense reachable only from your Ansible HOST via HTTPS.
+  
 
 #### Todos
 
