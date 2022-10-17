@@ -2,14 +2,17 @@
 
 I made this project just for fun, it allows you to create a proxmox host on Hetzner BareMetal
 
-Tested on Hetzner EX43 at HEL1
 
+#### Features
 
-feel free and send merge requests :)
+ * Install OPNsense as a router. Fake the MAC Address if tge primary Interface and bridged to WAN
+ * SEMI Autoinstall (still in progress..)
+ * Create Cloud-INIT Images
 
 #### Requirements
 
-Server in rescue mode
+  * Tested on Hetzner Bare Metal EX43 at HEL1 - last run 17.10.2022
+  * Server in rescue mode with valid SSH public key
 
 #### Variables
 
@@ -17,9 +20,21 @@ Server in rescue mode
  * `hetzner_pve_ssh_keys` [default: `secret` ]: Your SSH Pubkey to login (openssh,busybox boot)
  * `hetzner_pve_acme_mail` [default: `email@example.com` ]: Mail address for acme by letsencrypt
  * `hetzner_pve_acme_domain` [default: `vmhost.domain.com` ]: fqdn from your vmhost - must reachable from external
- * `hetzner_pve_storagebox_server` : storagebox / cifs account to automount
- * `hetzner_pve_network`  [default: `true` ]: create a vmbr1 and routes that - more info: https://github.com/extremeshok/xshok-proxmox#creates-a-routed-vmbr0-and-nat-vmbr1-network-configuration-for-proxmox-network-configuresh-run-once
- * `hetzner_pve_custom_packages`:  list of custom packages to install
+ * `hetzner_pve_storagebox_server`: storagebox / cifs account to automount
+ * `hetzner_pve_custom_packages`: list of custom packages to install
+
+
+ * `hetzner_pve_setup_opnsense` [default: `true`]: Provision a OPNsense vm Firewall
+ * `hetzner_pve_setup_opnsense_force` [default: `true`]: Destroy the old vm and recreate
+ * `hetzner_pve_setup_opnsense_enable_ipv6`  [default: `false`]: Enable IPV6
+ * `hetzner_pve_setup_opnsense_settings_lan_dhcpd`  [default: `true`]: Start DHCP on LAN Bridge
+ * `hetzner_pve_setup_opnsense_user` [default: `ansible`]: Create a ansible user for ansible
+ * `hetzner_pve_network_lan_subnet` [default: 24"]: Internal LAN Subnet
+ * `hetzner_pve_network_lan_ip` [default: "192.168.49.2"]: Internal LAN IP for Proxmox 
+ * `hetzner_pve_network_vm_lan_ip` [default: "192.168.49.254"]: Internal LAN IP for OPNsense
+ * `hetzner_pve_network_vm_lan_dhcp_from` [default: "192.168.49.100"]: OPNsense DHCP range start 
+ * `hetzner_pve_network_vm_lan_dhcp_to` [default: "192.168.49.150"]:  OPNsense DHCP range end
+
 
 
 #### Todos
