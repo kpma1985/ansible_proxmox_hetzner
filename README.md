@@ -41,8 +41,20 @@ I made this project just for fun, it allows you to create a proxmox host on Hetz
 #### Howto
 
 * ansible-playbook playbook.yml -i inventory/hosts
-* OPNsense reachable only from your Ansible HOST via HTTPS.
   
+* When playbook finished
+       
+      Please change OPNsense password!!!
+      Gui is only reachable by {{ ipify_public_ip  }}
+ 
+      OPNsense GUI: https://{{ ansible_host }}
+          Username: root
+          Password: opnsense
+
+      Proxmox GUI: https://{{ ansible_host }}:{{ hetzner_pve_setup_opnsense_fwd_proxmox_gui_port }}
+          Username: root
+          Password: <yoursecret>
+
 
 #### Todos
 
