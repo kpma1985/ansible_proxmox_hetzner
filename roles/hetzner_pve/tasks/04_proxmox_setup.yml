@@ -1,5 +1,5 @@
 ---
-- name: Change various sysctl-settings
+- name: PROXMOX - Slow down the rebuild of RAID
   sysctl:
     name: '{{ item.key }}'
     value: '{{ item.value }}'
@@ -8,15 +8,16 @@
     reload: yes
     ignoreerrors: yes
   with_dict: '{{ sysctl_config }}'
+  when: hetzner_pve_proxmox_package_upgrades_reboot.stat.exists
   
-- name: Set Postfix option type as Local only
+- name: PROXMOX - Change postfix mailer type
   debconf: 
     name=postfix 
     question="postfix/main_mailer_type" 
     value="'Local only'" 
     vtype="string"
 
-- name: Install Proxmox
+- name: PROXMOX - Install proxmox and some packages
   ansible.builtin.apt:
     pkg:
     - proxmox-ve
@@ -29,15 +30,15 @@
     - sshpass
     - telnet
     - expect
-  register: install_pve
+  register: hetzner_pve_proxmox_install
 
-- name: Remove Debian kernel 
+- name: PROXMOX - Remove old Debian kernel
   ansible.builtin.apt:
     pkg:
     - linux-image-amd64
     - os-prober
-  when: install_pve.changed
+  when: hetzner_pve_proxmox_install.changed
   notify: restart vmhost
 
 - meta: flush_handlers
-  when: install_pve.changed 
+  when: hetzner_pve_proxmox_install.changed 

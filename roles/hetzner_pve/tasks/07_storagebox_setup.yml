@@ -1,23 +1,23 @@
 ---
-- name: Creates directory
+- name: Storagebox - Create mount directory for storagebox
   file:
     path: "/mnt/{{ item.name }}"
     state: directory
     mode: 0755
-  register: hetzner_pve_new_folder
+  register: hetzner_pve_storagebox_directory_created
   with_items: "{{ hetzner_pve_storagebox_server }}"
 
-- name: Update fstab
+- name: Storagebox - Update /etc/fstab
   blockinfile:
     path: /etc/fstab
     state: present
     block: |
       //{{ item.name }}/backup /mnt/{{ item.name }} cifs _netdev,username={{ item.user }},password={{ item.pass }},uid=101001,gid=101001 0 0
-  register: hetzner_pve_new_fstab
+  register: hetzner_pve_storagebox_fstab_edited
   with_items: "{{ hetzner_pve_storagebox_server }}"
   no_log: true
 
-- name: "Mount share"
+- name: Storagebox - Mount storagebox
   mount:
     state: "mounted"
     fstype: "cifs"
@@ -27,7 +27,7 @@
   with_items: "{{ hetzner_pve_storagebox_server }}"
   no_log: true
     
-- name: Add storage to proxmox
+- name: Storagebox - Add new mount to Proxmox
   shell: "pvesm add dir {{ item.name }} --path /mnt/{{ item.name }}"
   with_items: "{{ hetzner_pve_storagebox_server }}"
-  when: hetzner_pve_new_folder.changed
+  when: hetzner_pve_storagebox_directory_created.changed

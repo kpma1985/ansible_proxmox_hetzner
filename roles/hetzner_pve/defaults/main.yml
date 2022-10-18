@@ -1,7 +1,7 @@
 ---
 ### General Setup settings - TODO: Testing
 sysctl_config:
-  net.dev.raid.speed_limit_max: 1000
+  net.raid.speed_limit_max: 1000
 
 hetzner_pve_luks_pass: secret
 hetzner_pve_root_pass: secret
@@ -24,6 +24,7 @@ hetzner_pve_storagebox_server:
 
 ### Setup OPNSENSE Firwewall
 hetzner_pve_setup_opnsense: true
+hetzner_pve_setup_opnsense_fwd_proxmox_gui_port: 48604
 hetzner_pve_setup_opnsense_force: true
 hetzner_pve_setup_opnsense_enable_ipv6: false
 hetzner_pve_setup_opnsense_settings_lan_dhcpd: true
@@ -46,6 +47,7 @@ hetzner_pve_opnsense_vm_settings:
     url: https://mirror.fra10.de.leaseweb.net/opnsense/releases/22.7/OPNsense-22.7-OpenSSL-nano-amd64.img.bz2
 
 hetzner_pve_opnsense_settings:
+  - system/dnsallowoverride: "1"
   - system/hostname: fw
   - system/domain: example.com
   - system/ssh/enabled: enabled
@@ -79,7 +81,6 @@ opn_group:
   - name: admins
     settings:
       - member: 2000
-
 
 hetzner_pve_custom_packages:
   - ufw

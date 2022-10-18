@@ -4,9 +4,11 @@ I made this project just for fun, it allows you to create a proxmox host on Hetz
 
 
 #### Features
-
+ 
+ * Debian full crypted ROOT partition
  * Install OPNsense as a router. Fake the MAC Address if tge primary Interface and bridged to WAN
- * SEMI Autoinstall (still in progress..)
+ * Autoinstall OPNsense (still in progress..)
+ * Create Backup of OPNsense after setup
  * Create Cloud-INIT Images
 
 #### Requirements

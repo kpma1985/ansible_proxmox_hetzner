@@ -1,6 +1,6 @@
 ---
 
-- name: Add Ansible User (1/2)
+- name: OPNsense Preapare - Add Ansible User (1/2)
   xml:
     path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
     xpath: /opnsense/system/user[name/text()="{{ item.0.name }}"]/{{ item.1.key }}
@@ -12,8 +12,7 @@
   when: item.1.value is defined
   no_log: true
 
-
-- name: b64 user fields
+- name: OPNsense Preapare - Add Ansible User (2/2)
   xml:
     path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
     xpath: /opnsense/system/user[name/text()="{{ item.0.name }}"]/{{ item.1.key }}
@@ -24,3 +23,14 @@
     - settings
   when: item.1.b64_value is defined
   no_log: true
+
+- name: OPNsense Preapare - Add Ansible User to admins
+  xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/system/group[name/text()="{{ item.0.name }}"]
+    add_children:
+      - member: "{{ item.1.member }}"
+    pretty_print: yes
+  with_subelements:
+    - "{{ opn_group }}"
+    - settings

@@ -1,12 +1,12 @@
 ---
-- name: Download cloud-init template
+- name: Cloudimages - Download cloudimages
   ansible.builtin.get_url:
     url: "{{ item.url }}"
     dest: "/tmp/{{ item.name }}.img"
     mode: '0644'
   with_items: "{{ hetzner_pve_cloud_images }}"
 
-- name: Create Image
+- name: Cloudimages - Creating dloud-init templates
   shell: |
     qm destroy {{ item.id }}
     virt-customize -a /tmp/{{ item.name }}.img --install qemu-guest-agent
@@ -20,7 +20,7 @@
     qm set {{ item.id }} --name template.{{ item.name }} --agent 1 --ipconfig0 ip=dhcp --sshkey /root/.ssh/authorized_keys --ciuser {{ item.username }} 
   with_items: "{{ hetzner_pve_cloud_images }}"
 
-- name: Cleanup templates
+- name: Cloudimages - Removing downloaded files
   file:
     path: "/tmp/{{ item.name }}.img"
     state: absent
