@@ -26,7 +26,6 @@
     path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
     state: absent
     regexp: '<trigger_initial_wizard/>'
-  connection: local
 
 - name: OPNsense Preapare - Enable port forwarding for Proxmox
   ansible.builtin.lineinfile:
