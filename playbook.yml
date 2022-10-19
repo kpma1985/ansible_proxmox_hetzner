@@ -2,6 +2,23 @@
 - name: 'Install PROXMOX'
   hosts: vmhost
   user: root
-  gather_facts: true
+  gather_facts: false
+  pre_tasks:
+  - name: Check for SSH Port
+    wait_for:
+      host: "{{ inventory_hostname }}"
+      port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
+      timeout: 10
+    ignore_errors: yes
+    register: custom_ssh_port
+    delegate_to: localhost
+
+  - name: set ansible_port
+    set_fact:
+      ansible_port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
+    when: not custom_ssh_port.failed
+
+  - ansible.builtin.setup:
+
   roles:
     - { role: hetzner_pve }

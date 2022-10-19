@@ -13,8 +13,8 @@ I made this project just for fun, it allows you to create a proxmox host on Hetz
 
 #### Requirements
   
-  * `ansible-galaxy collection install community.hrobot`
-  * Tested on Hetzner Bare Metal EX43 at HEL1 - last run 17.10.2022
+  * `ansible-galaxy collection install community.hrobot` - Need for Hetzner API
+  * Tested on Hetzner Bare Metal EX43 at HEL1 - last run 19.10.2022
 
 #### Variables
  * `hetzner_pve_autorescue` [default: `true` ]: Set rescue mode automaticly and generate SSH Key if not present

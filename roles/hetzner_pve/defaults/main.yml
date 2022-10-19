@@ -30,6 +30,7 @@ hetzner_pve_storagebox_server:
 hetzner_pve_setup_opnsense: true
 hetzner_pve_setup_opnsense_fwd_proxmox_gui_port: 48604
 hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port: 48622
+hetzner_pve_setup_opnsense_ssh_port: 49022
 hetzner_pve_setup_opnsense_force: true
 hetzner_pve_setup_opnsense_enable_ipv6: false
 hetzner_pve_setup_opnsense_settings_lan_dhcpd: true
@@ -55,12 +56,13 @@ hetzner_pve_opnsense_settings:
   - system/dnsallowoverride: "1"
   - system/hostname: fw
   - system/domain: example.com
+  - system/webgui/noantilockout: "1"
   - system/ssh/enabled: enabled
   - system/ssh/group: admins
-  - system/ssh/interfaces: lan
+  - system/ssh/interfaces: lan,wan
   - system/ssh/passwordauth: "1"
   - system/ssh/permitrootlogin: "1"
-  - system/ssh/port: "49022"
+  - system/ssh/port: "{{ hetzner_pve_setup_opnsense_ssh_port }}"
   - system/ssh/shell: "/bin/sh"
   - interfaces/wan/if: vtnet0
   - interfaces/wan/ipaddr: dhcp
