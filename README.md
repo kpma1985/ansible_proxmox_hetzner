@@ -58,11 +58,7 @@ I made this project just for fun, it allows you to create a proxmox host on Hetz
 
 #### Todos
 
-  * Update root password
-  * Hetzner API - set server into rescue mode
-  * Simple monitoring via mail
-  * ...
-  * ...
+  * Testing and improvements
 
 
 thanks to https://github.com/extremeshok/xshok-proxmox
