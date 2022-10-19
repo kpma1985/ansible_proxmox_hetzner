@@ -2,4 +2,4 @@
 ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
 [vmhost]
-exmpale.com ansible_host=0.0.0.0.
+example.com ansible_host=0.0.0.0 ENV_INVENTORY_SRV_NO=XXXX

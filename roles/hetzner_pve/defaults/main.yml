@@ -1,12 +1,16 @@
 ---
+### Hetzner API - https://robot.hetzner.com/preferences/index
+hetzner_pve_autorescue: true
+hetzner_pve_hetzner_api_user: secret
+hetzner_pve_hetzner_api_pass: secret
+
 ### General Setup settings - TODO: Testing
 sysctl_config:
   net.raid.speed_limit_max: 1000
 
 hetzner_pve_luks_pass: secret
 hetzner_pve_root_pass: secret
-hetzner_pve_ssh_keys:
-  - ssh-rsa ...
+hetzner_pve_ssh_keys: []
 
 ### ACME - letsencrypt
 hetzner_pve_create_acme: true
@@ -25,6 +29,7 @@ hetzner_pve_storagebox_server:
 ### Setup OPNSENSE Firwewall
 hetzner_pve_setup_opnsense: true
 hetzner_pve_setup_opnsense_fwd_proxmox_gui_port: 48604
+hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port: 48622
 hetzner_pve_setup_opnsense_force: true
 hetzner_pve_setup_opnsense_enable_ipv6: false
 hetzner_pve_setup_opnsense_settings_lan_dhcpd: true
@@ -55,6 +60,7 @@ hetzner_pve_opnsense_settings:
   - system/ssh/interfaces: lan
   - system/ssh/passwordauth: "1"
   - system/ssh/permitrootlogin: "1"
+  - system/ssh/port: "49022"
   - system/ssh/shell: "/bin/sh"
   - interfaces/wan/if: vtnet0
   - interfaces/wan/ipaddr: dhcp

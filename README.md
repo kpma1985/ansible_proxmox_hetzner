@@ -4,7 +4,7 @@ I made this project just for fun, it allows you to create a proxmox host on Hetz
 
 
 #### Features
- 
+
  * Debian full crypted ROOT partition
  * Install OPNsense as a router. Fake the MAC Address if tge primary Interface and bridged to WAN
  * Autoinstall OPNsense (still in progress..)
@@ -12,20 +12,20 @@ I made this project just for fun, it allows you to create a proxmox host on Hetz
  * Create Cloud-INIT Images
 
 #### Requirements
-
+  
+  * `ansible-galaxy collection install community.hrobot`
   * Tested on Hetzner Bare Metal EX43 at HEL1 - last run 17.10.2022
-  * Server in rescue mode with valid SSH public key
 
 #### Variables
-
+ * `hetzner_pve_autorescue` [default: `true` ]: Set rescue mode automaticly and generate SSH Key if not present
+ * `hetzner_pve_hetzner_api_user` [default: `secret` ]: Hetzner API user
+ * `hetzner_pve_hetzner_api_pass` [default: `secret` ]: Hetzner API password
  * `hetzner_pve_luks_pass` [default: `secret` ]: Luks encryption password 
- * `hetzner_pve_ssh_keys` [default: `secret` ]: Your SSH Pubkey to login (openssh,busybox boot)
+ * `hetzner_pve_ssh_keys` [default: `secret` ]: Your SSH Pubkey to login (openssh,busybox boot) - If no SSH Key is provided, ansible will create a new one at  `~/.ssh/id_ed25519_ansible`
  * `hetzner_pve_acme_mail` [default: `email@example.com` ]: Mail address for acme by letsencrypt
  * `hetzner_pve_acme_domain` [default: `vmhost.domain.com` ]: fqdn from your vmhost - must reachable from external
  * `hetzner_pve_storagebox_server`: storagebox / cifs account to automount
  * `hetzner_pve_custom_packages`: list of custom packages to install
-
-
  * `hetzner_pve_setup_opnsense` [default: `true`]: Provision a OPNsense vm Firewall
  * `hetzner_pve_setup_opnsense_force` [default: `true`]: Destroy the old vm and recreate
  * `hetzner_pve_setup_opnsense_enable_ipv6`  [default: `false`]: Enable IPV6

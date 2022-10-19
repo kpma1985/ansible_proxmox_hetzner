@@ -48,6 +48,22 @@
             <port>{{ hetzner_pve_setup_opnsense_fwd_proxmox_gui_port }}</port>
           </destination>
         </rule>
+        <rule>
+          <protocol>tcp</protocol>
+          <interface>wan</interface>
+          <ipprotocol>inet</ipprotocol>
+          <log>1</log>
+          <target>{{ hetzner_pve_network_lan_ip }}</target>
+          <local-port>22</local-port>
+          <source>
+            <network>(self)</network>
+            <not>1</not>
+          </source>
+          <destination>
+            <network>(self)</network>
+            <port>{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}</port>
+          </destination>
+        </rule>
 
 - name: OPNsense Preapare - Update general settings in config.xml
   xml:

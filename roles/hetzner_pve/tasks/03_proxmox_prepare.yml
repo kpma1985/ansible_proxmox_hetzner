@@ -29,7 +29,6 @@
   register: hetzner_pve_proxmox_package_upgrades_reboot
   stat: path=/var/run/reboot-required get_md5=no
   notify: restart vmhost
-  when: hetzner_pve_proxmox_package_upgrades.changed
 
 - meta: flush_handlers
   when: hetzner_pve_proxmox_package_upgrades_reboot.stat.exists

@@ -1,4 +1,6 @@
 ---
+- name: Gather ansible facts
+  ansible.builtin.setup:
 
 - name: Checking for Proxmox installation
   register: hetzner_pve_installed
