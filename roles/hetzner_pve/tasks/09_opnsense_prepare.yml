@@ -6,7 +6,9 @@
 
 - name: OPNsense Preapare - Install pyhton module for parsing XML
   pip:
-    name: lxml
+    name:
+    - lxml
+    - pexpect
 
 - name: OPNsense Preapare - Creating tmp directory for opnsense-importer USB Stick
   ansible.builtin.file:
