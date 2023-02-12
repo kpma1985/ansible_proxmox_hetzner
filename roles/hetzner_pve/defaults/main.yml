@@ -1,0 +1,134 @@
+---
+### Hetzner API - https://robot.hetzner.com/preferences/index
+hetzner_pve_autorescue: true
+hetzner_pve_hetzner_api_user: secret
+hetzner_pve_hetzner_api_pass: secret
+
+### General Setup settings - TODO: Testing
+sysctl_config:
+  dev.raid.speed_limit_max: 1000
+
+hetzner_pve_luks_pass: secret
+hetzner_pve_root_pass: secret
+hetzner_pve_ssh_keys: []
+
+### ACME - letsencrypt
+hetzner_pve_create_acme: true
+hetzner_pve_acme_mail: mail@example.com
+hetzner_pve_acme_domain: vmhost.example.com
+# hetzner_pve_acme_server: https://acme-v02.api.letsencrypt.org/directory ## PROD
+hetzner_pve_acme_server: https://acme-staging-v02.api.letsencrypt.org/directory
+
+### INSTALL PBS
+hetzner_pbs_setup: true
+
+### Setup StorageBox as Mount
+hetzner_pve_storagebox_setup: true
+hetzner_pve_storagebox_server:
+  - name: XXXX.your-storagebox.de
+    user: XXXX
+    pass: XXXX
+
+### Setup OPNSENSE Firwewall
+hetzner_pve_setup_opnsense: true
+hetzner_pve_setup_opnsense_fwd_proxmox_gui_port: 48604
+hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port: 48622
+hetzner_pve_setup_opnsense_fwd_proxmox_pbs_gui_port: 48605
+hetzner_pve_setup_opnsense_ssh_port: 49022
+hetzner_pve_setup_opnsense_force: true
+hetzner_pve_setup_opnsense_enable_ipv6: false
+hetzner_pve_setup_opnsense_settings_lan_dhcpd: true
+hetzner_pve_setup_opnsense_user: ansible
+
+hetzner_pve_setup_opnsense_root_pass: secret
+
+hetzner_pve_network_lan_subnet: "24"
+hetzner_pve_network_lan_ip: "192.168.49.2"
+hetzner_pve_network_vm_lan_ip: "192.168.49.254"
+hetzner_pve_network_vm_lan_dhcp_from: "192.168.49.100"
+hetzner_pve_network_vm_lan_dhcp_to: "192.168.49.150"
+
+hetzner_pve_opnsense_vm_settings:
+  name: opnsense
+  id: 9000
+  memory: 4096
+  storage: local
+  disk_size: +7G
+  wan_bridge: vmbr0
+  lan_bridge: vmbr99
+  url: https://mirror.fra10.de.leaseweb.net/opnsense/releases/22.7/OPNsense-22.7-OpenSSL-nano-amd64.img.bz2
+
+hetzner_pve_opnsense_settings:
+  - system/dnsallowoverride: "1"
+  - system/hostname: fw
+  - system/domain: example.com
+  - system/webgui/noantilockout: "1"
+  - system/ssh/enabled: enabled
+  - system/ssh/group: admins
+  - system/ssh/interfaces: lan,wan
+  - system/ssh/passwordauth: "1"
+  - system/ssh/permitrootlogin: "1"
+  - system/ssh/port: "{{ hetzner_pve_setup_opnsense_ssh_port }}"
+  - system/ssh/shell: "/bin/sh"
+  - interfaces/wan/if: vtnet0
+  - interfaces/wan/ipaddr: dhcp
+  - interfaces/lan/if: vtnet1
+
+# TODO - refactor user provisioning
+opn_user:
+  - name: "{{ hetzner_pve_setup_opnsense_user }}"
+    settings:
+      - key: descr
+        value: "Ansible User"
+      - key: scope
+        value: user
+      - key: groupname
+        value: admins
+      - key: shell
+        value: "/bin/sh"
+      - key: uid
+        value: 2000
+      - key: authorizedkeys
+        b64_value: "{{ hetzner_pve_ssh_keys.0 }}"
+
+opn_group:
+  - name: admins
+    settings:
+      - member: 2000
+
+hetzner_pve_custom_packages:
+  - screen
+  - vim
+  - htop
+  - iotop
+  - jnettop
+  - tcpdump
+  - zsh
+  - git
+
+hetzner_pbs_custom_packages:
+  - proxmox-backup-server
+
+hetzner_pve_cloud_images_setup: true
+hetzner_pve_cloud_images:
+  - id: 9001
+    name: bionic
+    username: ubuntu
+    url: https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img
+    memory: 2048
+    bridge: "{{ hetzner_pve_opnsense_vm_settings.lan_bridge }}"
+    storage: local
+  - id: 9002
+    name: focal
+    username: ubuntu
+    url: https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
+    memory: 2048
+    bridge: "{{ hetzner_pve_opnsense_vm_settings.lan_bridge }}"
+    storage: local
+  - id: 9003
+    name: jammy
+    username: ubuntu
+    url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+    memory: 2048
+    bridge: "{{ hetzner_pve_opnsense_vm_settings.lan_bridge }}"
+    storage: local

@@ -1,0 +1,9 @@
+---
+
+- name: Restart vmhost
+  ansible.legacy.include_tasks: tasks/handlers/restart.yml
+
+- name: Restart nginx
+  ansible.legacy.service:
+    name: nginx
+    state: restarted

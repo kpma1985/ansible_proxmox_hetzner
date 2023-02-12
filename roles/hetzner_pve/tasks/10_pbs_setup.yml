@@ -1,0 +1,53 @@
+---
+- name: PROXMOX PBS - Add PBS repository
+  apt_repository:
+    repo: 'deb http://download.proxmox.com/debian/pbs bullseye pbs-no-subscription'
+    state: present
+    filename: pbs-install-repo
+    update_cache: true
+
+- name: PROXMOX PBS - Install PBS
+  ansible.builtin.apt:
+    pkg: "{{ item }}"
+    update_cache: true
+  with_items: "{{ hetzner_pbs_custom_packages }}"
+
+- name: set ansible_port
+  set_fact:
+    ansible_port: "{{ hetzner_pve_setup_opnsense_ssh_port }}"
+
+- name: Symlink /usr/bin/python -> /usr/bin/python3
+  raw: |
+    if [ ! -f /usr/bin/python3 ]; then
+      ln -s /usr/local/bin/python3 /usr/bin/python3;
+    fi
+  become: true
+
+- name: OPNsense Preapare - Enable port forwarding for Proxmox
+  ansible.builtin.lineinfile:
+    backup: true
+    path: "/conf/config.xml"
+    insertafter: '</outbound>'
+    line: |
+        <rule>
+          <protocol>tcp</protocol>
+          <interface>wan</interface>
+          <ipprotocol>inet</ipprotocol>
+          <log>1</log>
+          <target>{{ hetzner_pve_network_lan_ip }}</target>
+          <local-port>8007</local-port>
+          <source>
+            <network>(self)</network>
+            <not>1</not>
+          </source>
+          <destination>
+            <network>(self)</network>
+            <port>{{ hetzner_pve_setup_opnsense_fwd_proxmox_pbs_gui_port }}</port>
+          </destination>
+        </rule>
+
+- name: reload
+  command: "{{ item }}"
+  with_items:
+    - configctl filter sync
+    - configctl filter reload

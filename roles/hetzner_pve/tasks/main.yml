@@ -1,0 +1,45 @@
+---
+- name: Check for SSH Port
+  wait_for:
+    host: "{{ inventory_hostname }}"
+    port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
+    timeout: 5
+  ignore_errors: true
+  register: custom_ssh_port
+  delegate_to: localhost
+
+- name: Set ansible_port
+  set_fact:
+    ansible_port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
+  when: not custom_ssh_port.failed
+
+- ansible.builtin.setup:
+
+- ansible.builtin.include_tasks: 00_rescue.yml
+  when: hetzner_pve_autorescue
+
+- ansible.builtin.include_tasks: 01_os_prepare.yml
+
+- ansible.builtin.include_tasks: 02_os_setup.yml
+  when: hetzner_pve_installed.stat.exists == false
+
+- ansible.builtin.include_tasks: 03_proxmox_prepare.yml
+  when: hetzner_pve_installed.stat.exists == false
+
+- ansible.builtin.include_tasks: 04_proxmox_setup.yml
+  when: hetzner_pve_installed.stat.exists == false
+
+- ansible.builtin.include_tasks: 05_proxmox_post.yml
+  when: hetzner_pve_xshock_installed.stat.exists == false
+
+- ansible.builtin.include_tasks: 07_storagebox_setup.yml
+  when: hetzner_pve_storagebox_setup
+
+- ansible.builtin.include_tasks: 08_cloudimages_setup.yml
+  when: hetzner_pve_cloud_images_setup
+
+- ansible.builtin.include_tasks: 09_opnsense_prepare.yml
+  when: hetzner_pve_setup_opnsense
+
+- ansible.builtin.include_tasks: 10_pbs_setup.yml
+  when: hetzner_pbs_setup

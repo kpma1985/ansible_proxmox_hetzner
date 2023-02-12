@@ -1,0 +1,25 @@
+---
+- name: OS - Start installimage
+  ansible.builtin.shell: '/root/.oldroot/nfs/install/installimage -a -c /tmp/setup.conf -u yes -x /tmp/post_install.sh'
+  notify: Restart vmhost
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: OS - Pause for 15 seconds
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: OS - Update Installimage status
+  ansible.builtin.file:
+    path: /etc/hetzner_pve_run
+    state: touch
+    mode: u=rw,g=r,o=r
+
+- name: OS - Update root user password
+  ansible.builtin.user:
+    name: "root"
+    state: present
+    update_password: always
+    password: "{{ hetzner_pve_root_pass | password_hash('sha512') }}"
+  no_log: true

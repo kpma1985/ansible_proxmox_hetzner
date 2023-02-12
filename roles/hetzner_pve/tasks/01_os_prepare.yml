@@ -1,0 +1,57 @@
+---
+- name: Gather ansible facts
+  ansible.builtin.setup:
+
+- name: Checking for Proxmox installation
+  stat:
+    path: /etc/hetzner_pve_run
+  register: hetzner_pve_installed
+
+- name: Checking for ACME account
+  stat:
+    path: /etc/pve/priv/acme/default
+  register: hetzner_pve_acme_acc_registered
+
+- name: Checking for SSL certs
+  stat:
+    path: /etc/pve/local/pveproxy-ssl.pem
+  register: hetzner_pve_proxy_cert_exists
+
+- name: Checking for xshock installation
+  stat:
+    path: /etc/extremeshok
+  register: hetzner_pve_xshock_installed
+
+- name: Checking for OPNsense
+  stat:
+    path: "/etc/pve/qemu-server/{{ hetzner_pve_opnsense_vm_settings.id }}.conf"
+  register: hetzner_pve_opnsense_installed
+
+- name: Deploy Hetzner installimage config
+  ansible.builtin.template:
+    src: setup_debian11.conf.j2
+    dest: /tmp/setup.conf
+    owner: root
+    group: root
+    mode: '0755'
+  when: not hetzner_pve_installed.stat.exists
+
+- name: Deploy OS post install script
+  ansible.builtin.template:
+    src: post_install.sh.j2
+    dest: /tmp/post_install.sh
+    owner: root
+    group: root
+    mode: '0755'
+  when: not hetzner_pve_installed.stat.exists
+
+- name: Deploy ssh key
+  ansible.builtin.template:
+    src: authorized_keys.j2
+    dest: /tmp/authorized_keys
+    mode: '0755'
+  when: not hetzner_pve_installed.stat.exists
+
+- name: Disable mdadm
+  ansible.builtin.command: "mdadm --stop --scan"
+  when: not hetzner_pve_installed.stat.exists

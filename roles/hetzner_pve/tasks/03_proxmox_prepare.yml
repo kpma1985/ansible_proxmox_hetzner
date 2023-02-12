@@ -1,0 +1,34 @@
+---
+- name: PROXMOX - Slow down the rebuild of RAID
+  ansible.posix.sysctl:
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
+    sysctl_set: true
+    state: present
+    reload: true
+    ignoreerrors: true
+  with_dict: '{{ sysctl_config }}'
+
+- name: PROXMOX - Add repository key
+  ansible.builtin.get_url:
+    url: https://enterprise.proxmox.com/debian/proxmox-release-bullseye.gpg
+    dest: /etc/apt/trusted.gpg.d/proxmox-release-bullseye.gpg
+
+- name: PROXMOX - Add repository
+  apt_repository:
+    repo: 'deb [arch=amd64] http://download.proxmox.com/debian/pve bullseye pve-no-subscription'
+    state: present
+    filename: pve-install-repo
+    update_cache: true
+
+- name: PROXMOX - Upgrade all packages before setup Proxmox
+  apt: upgrade=dist force_apt_get=yes
+  register: hetzner_pve_proxmox_package_upgrades
+
+- name: PROXMOX - Reboot required after package upgrades?
+  register: hetzner_pve_proxmox_package_upgrades_reboot
+  stat: path=/var/run/reboot-required get_md5=no
+  notify: Restart vmhost
+
+- meta: flush_handlers
+  when: hetzner_pve_proxmox_package_upgrades_reboot.stat.exists

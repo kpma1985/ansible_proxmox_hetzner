@@ -1,0 +1,76 @@
+---
+- name: PROXMOX - Slow down the rebuild of RAID
+  ansible.posix.sysctl:
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
+    sysctl_set: true
+    state: present
+    reload: true
+    ignoreerrors: true
+  with_dict: '{{ sysctl_config }}'
+  when: hetzner_pve_proxmox_package_upgrades_reboot.stat.exists
+
+- name: fix
+  shell: apt -q -y purge firmware-bnx2x firmware-realtek firmware-linux firmware-linux-free firmware-linux-nonfree
+
+
+- name: PROXMOX - Change postfix mailer type
+  debconf:
+    name=postfix
+    question="postfix/main_mailer_type"
+    value="'Local only'"
+    vtype="string"
+
+- name: PROXMOX - Install proxmox and some packages
+  ansible.builtin.apt:
+    pkg:
+      - proxmox-ve
+      - postfix
+      - open-iscsi
+      - python3-pip
+      #- cloud-init
+      - libguestfs-tools
+      - unzip
+      - sshpass
+      - telnet
+      - expect
+      - python3
+      - openssh-server
+  register: hetzner_pve_proxmox_install
+
+- name: PROXMOX - Install custom packages
+  ansible.builtin.apt:
+    pkg: "{{ item }}"
+  with_items: "{{ hetzner_pve_custom_packages }}"
+
+
+### Remove enterprise pve repo
+- name: PROXMOX - remove enterprise repo
+  file:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    state: absent
+
+- name: PROXMOX - ifupdown2 fix - reinstall package
+  ansible.builtin.apt:
+    name: "ifupdown2"
+    state: present
+    purge: true
+    update_cache: true
+    force: true
+
+- name: PROXMOX - ifupdown2 fix - ensure networking is enabled
+  ansible.builtin.service:
+    name: networking
+    enabled: true
+
+# - name: PROXMOX - Remove old Debian kernel
+#   ansible.builtin.apt:
+#     pkg:
+#       - linux-image-amd64
+#       - os-prober
+#   when: hetzner_pve_proxmox_install.changed
+#   notify: Restart vmhost
+
+- name: Flush Handlers
+  meta: flush_handlers
+  when: hetzner_pve_proxmox_install.changed

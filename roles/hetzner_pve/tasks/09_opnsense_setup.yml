@@ -1,0 +1,142 @@
+---
+- name: OPNsense - Download OPNsense Image
+  ansible.builtin.get_url:
+    url: "{{ hetzner_pve_opnsense_vm_settings.url }}"
+    dest: "/tmp/{{ hetzner_pve_opnsense_vm_settings.url | basename }}"
+
+- name: OPNsense - Extract OPNsense Image
+  ansible.builtin.shell:
+    cmd: "bzip2 -f -d -v /tmp/{{ hetzner_pve_opnsense_vm_settings.url | basename }}"
+
+### TODO: lookup
+- name: OPNsense - Do we destroy existing OPNsense?
+  ansible.builtin.shell: |
+    qm stop {{ hetzner_pve_opnsense_vm_settings.id }}
+    qm destroy {{ hetzner_pve_opnsense_vm_settings.id }}
+  when: hetzner_pve_setup_opnsense_force
+  ignore_errors: true
+
+- name: OPNsense - Create OPNsense VM
+  shell: |
+      qm create {{ hetzner_pve_opnsense_vm_settings.id }} \
+      --onboot 1 --agent 1 --name opnsense \
+      --memory {{ hetzner_pve_opnsense_vm_settings.memory }} \
+      --net0 virtio={{ hostvars[inventory_hostname].ansible_default_ipv4.macaddress }},bridge={{ hetzner_pve_opnsense_vm_settings.wan_bridge }},link_down=1 \
+      --net1 virtio,bridge={{ hetzner_pve_opnsense_vm_settings.lan_bridge }} \
+      --args "-serial tcp:127.0.0.1:{{ hetzner_pve_opnsense_vm_settings.id }},server,nowait \
+              -drive file=fat:rw:/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/,if=none,id=drive-usb0,format=raw,cache=none \
+              -device usb-storage,id=drive-usb0,drive=drive-usb0,removable=on"
+
+- name: OPNsense - Assign downloaded image to OPNsense VM
+  ansible.builtin.shell: qm importdisk {{ hetzner_pve_opnsense_vm_settings.id }} \
+    /tmp/{{ hetzner_pve_opnsense_vm_settings.url | basename | regex_replace('.bz2', '') }} local
+
+- name: OPNsense - setup network
+  ansible.builtin.shell: qm set {{ hetzner_pve_opnsense_vm_settings.id }} --scsihw virtio-scsi-pci \
+    --scsi0 {{ hetzner_pve_opnsense_vm_settings.storage }}:{{ hetzner_pve_opnsense_vm_settings.id }}/vm-{{ hetzner_pve_opnsense_vm_settings.id }}-disk-0.raw
+
+- name: OPNsense - set Bootdisk
+  ansible.builtin.shell: qm set {{ hetzner_pve_opnsense_vm_settings.id }} --boot c --bootdisk scsi0
+
+- name: OPNsense - Resize disk
+  ansible.builtin.shell: qm resize {{ hetzner_pve_opnsense_vm_settings.id }} scsi0 {{ hetzner_pve_opnsense_vm_settings.disk_size }}
+
+- name: Wait for all qemu-img processes to exit
+  wait_for:
+    path: "/proc/{{ item }}/status"
+    state: absent
+  with_items: "{{ pid_of_qemu_resize.pids }}"
+  ignore_errors: true
+
+- name: OPNsense - Add temporary OPNsense bridges
+  ansible.builtin.blockinfile:
+    path: /etc/network/interfaces
+    block: |
+      auto {{ hetzner_pve_opnsense_vm_settings.wan_bridge }}
+      iface {{ hetzner_pve_opnsense_vm_settings.wan_bridge }} inet manual
+              bridge-ports none
+              bridge-stp off
+              bridge-fd 0
+
+      auto {{ hetzner_pve_opnsense_vm_settings.lan_bridge }}
+      iface {{ hetzner_pve_opnsense_vm_settings.lan_bridge }} inet static
+              address {{ hetzner_pve_network_lan_ip }}/{{ hetzner_pve_network_lan_subnet }}
+              bridge-ports none
+              bridge-stp off
+              bridge-fd 0
+  register: hetzner_pve_opnsense_tmp_bridge
+
+- name: OPNsense - Starting bridges and OPNsense VM
+  shell: |
+    ifup {{ hetzner_pve_opnsense_vm_settings.wan_bridge }}
+    ifup {{ hetzner_pve_opnsense_vm_settings.lan_bridge }}
+    qm start {{ hetzner_pve_opnsense_vm_settings.id }}
+  when: hetzner_pve_opnsense_tmp_bridge
+
+- name: OPNsense - Waiting for OPNsense - Connecting via serial - console
+  wait_for:
+    port: "{{ hetzner_pve_opnsense_vm_settings.id }}"
+    host: "localhost"
+    delay: 10
+
+- name: OPNsense - Trigger OPNsense configuration importer
+  expect:
+    command: "telnet  -e ! localhost {{ hetzner_pve_opnsense_vm_settings.id }}"
+    timeout: 60
+    echo: true
+    responses:
+      'Press any key to start the configuration importer':
+        - ''
+      'Select device to import from':
+        - 'da1'
+  register: hetzner_pve_setup_opnsense
+  failed_when: hetzner_pve_setup_opnsense.msg is search('error')
+
+- name: OPNsense - Update VM Host ansible facts
+  ansible.builtin.setup:
+
+- name: OPNsense - Update VM Host interfaces
+  ansible.builtin.template:
+    src: pve_interfaces.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+
+- name: OPNsense - Stop OPNsense, enable WAN interface and creating backup
+  ansible.builtin.shell: |
+    qm stop {{ hetzner_pve_opnsense_vm_settings.id }}
+    qm set {{ hetzner_pve_opnsense_vm_settings.id }} \
+            --net0 virtio={{ hostvars[inventory_hostname].ansible_default_ipv4.macaddress }},bridge={{ hetzner_pve_opnsense_vm_settings.wan_bridge }} --args ""
+    vzdump {{ hetzner_pve_opnsense_vm_settings.id }}
+
+- name: OPNsense - Reboot VM Host.
+  reboot:
+    post_reboot_delay: 20
+    test_command: "echo -ne {{ hetzner_pve_luks_pass }} > /lib/cryptsetup/passfifo"
+
+- name: OPNsense - Wait for system comming up after unlock
+  wait_for:
+    port: 443
+    host: "{{ inventory_hostname }}"
+    delay: 10
+  delegate_to: localhost
+
+- name: DONE
+  pause:
+    prompt: |
+      Installation done.
+
+      Please change OPNsense password!!!
+      Gui is only reachable by {{ ipify_public_ip }}
+
+      OPNsense GUI: https://{{ ansible_host }}
+          Username: root
+          Password: opnsense
+
+      Proxmox GUI: https://{{ ansible_host }}:{{ hetzner_pve_setup_opnsense_fwd_proxmox_gui_port }}
+          Username: root
+          Password: <yoursecret>
+
+      by https://github.com/kpma1985/ansible_proxmox_hetzner

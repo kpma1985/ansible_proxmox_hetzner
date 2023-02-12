@@ -1,0 +1,64 @@
+---
+
+- name: Check for SSH Key - If not - create a new key
+  community.crypto.openssh_keypair:
+    path: "~/.ssh/id_ed25519_ansible"
+    type: ed25519
+  delegate_to: localhost
+  run_once: true
+  when: hetzner_pve_ssh_keys is defined and (hetzner_pve_ssh_keys|length==0)
+
+- name: Set public key
+  ansible.legacy.set_fact:
+    hetzner_pve_ssh_keys:
+      - "{{ lookup('file', '~/.ssh/id_ed25519_ansible.pub') }}"
+  when: hetzner_pve_ssh_keys is defined and (hetzner_pve_ssh_keys | length==0)
+
+- name: HETZNER - Check for rescue mode
+  ansible.builtin.debug:
+    msg: "Server not in Rescue mode - Add SSH Key and rebooting..."
+  when: ansible_hostname != 'rescue'
+
+- name: HETZNER - Add SSH key
+  community.hrobot.ssh_key:
+    hetzner_user: "{{ hetzner_pve_hetzner_api_user }}"
+    hetzner_password: "{{ hetzner_pve_hetzner_api_pass }}"
+    state: present
+    name: ansible - hetzner_pve
+    public_key: "{{ hetzner_pve_ssh_keys.0 }}"
+  delegate_to: localhost
+  when: ansible_hostname != 'rescue'
+
+- name: HETZNER - Get all SSH Keys
+  community.hrobot.ssh_key_info:
+    hetzner_user: "{{ hetzner_pve_hetzner_api_user }}"
+    hetzner_password: "{{ hetzner_pve_hetzner_api_pass }}"
+  register: ssh_keys
+  delegate_to: localhost
+
+- name: HETZNER - Enable a rescue system (64bit Linux) for the next boot
+  community.hrobot.boot:
+    hetzner_user: "{{ hetzner_pve_hetzner_api_user }}"
+    hetzner_password: "{{ hetzner_pve_hetzner_api_pass }}"
+    server_number: "{{ ENV_INVENTORY_SRV_NO }}"
+    rescue:
+      os: linux
+      authorized_keys: "{{ ssh_keys.ssh_keys | map(attribute='fingerprint') | list }}"
+  delegate_to: localhost
+  when: ansible_hostname != 'rescue'
+
+- name: HETZNER - Reset SERVER
+  community.hrobot.reset:
+    hetzner_user: "{{ hetzner_pve_hetzner_api_user }}"
+    hetzner_password: "{{ hetzner_pve_hetzner_api_pass }}"
+    server_number: "{{ ENV_INVENTORY_SRV_NO }}"
+    reset_type: hardware
+  delegate_to: localhost
+  when: ansible_hostname != 'rescue'
+
+- name: Wait for system comming up after activating Rescue
+  ansible.legacy.wait_for:
+    port: 22
+    host: "{{ inventory_hostname }}"
+    delay: 10
+  delegate_to: localhost

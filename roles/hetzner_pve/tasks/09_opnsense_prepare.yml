@@ -1,0 +1,155 @@
+---
+- name: OPNsense Preapare - Get ansible host IP for setup OPNsense
+  community.general.ipify_facts.ipify_facts:
+  register: public_ip
+  connection: local
+
+- name: OPNsense Preapare - Install pyhton module for parsing XML
+  pip:
+    name:
+      - lxml
+      - pexpect
+      - psutil
+
+- name: OPNsense Preapare - Creating tmp directory for opnsense-importer USB Stick
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat
+    - /tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf
+
+- name: OPNsense Preapare - Get the last config.xml from OPNsense github
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/opnsense/core/master/src/etc/config.xml.sample
+    dest: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+
+- name: OPNsense Preapare - Disable initial wizzard
+  ansible.builtin.lineinfile:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    state: absent
+    regexp: '<trigger_initial_wizard/>'
+
+- name: OPNsense Preapare - Enable port forwarding for Proxmox
+  ansible.builtin.lineinfile:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    insertafter: '</outbound>'
+    line: |
+        <rule>
+          <protocol>tcp</protocol>
+          <interface>wan</interface>
+          <ipprotocol>inet</ipprotocol>
+          <log>1</log>
+          <target>{{ hetzner_pve_network_lan_ip }}</target>
+          <local-port>8006</local-port>
+          <source>
+            <network>(self)</network>
+            <not>1</not>
+          </source>
+          <destination>
+            <network>(self)</network>
+            <port>{{ hetzner_pve_setup_opnsense_fwd_proxmox_gui_port }}</port>
+          </destination>
+        </rule>
+        <rule>
+          <protocol>tcp</protocol>
+          <interface>wan</interface>
+          <ipprotocol>inet</ipprotocol>
+          <log>1</log>
+          <target>{{ hetzner_pve_network_lan_ip }}</target>
+          <local-port>22</local-port>
+          <source>
+            <network>(self)</network>
+            <not>1</not>
+          </source>
+          <destination>
+            <network>(self)</network>
+            <port>{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}</port>
+          </destination>
+        </rule>
+
+- name: OPNsense Preapare - Update general settings in config.xml
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/{{ item.key }}"
+    value: "{{ item.value }}"
+    pretty_print: true
+  with_dict: "{{ hetzner_pve_opnsense_settings }}"
+
+- name: OPNsense Preapare - Update LAN Interface (1/2)
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/interfaces/lan/ipaddr"
+    value: "{{ hetzner_pve_network_vm_lan_ip }}"
+    pretty_print: true
+
+- name: OPNsense Preapare - Update LAN Interface (2/2)
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/interfaces/lan/subnet"
+    value: "{{ hetzner_pve_network_lan_subnet }}"
+    pretty_print: true
+
+- name: OPNsense Preapare - Enable DHCP Server
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/dhcpd/lan/enable
+    state: present
+    value: "1"
+    pretty_print: true
+  when: hetzner_pve_setup_opnsense_settings_lan_dhcpd
+
+- name: OPNsense Preapare - DHCP range (1/2)
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/dhcpd/lan/range/from"
+    value: "{{ hetzner_pve_network_vm_lan_dhcp_from }}"
+    pretty_print: true
+  when: hetzner_pve_setup_opnsense_settings_lan_dhcpd
+
+- name: OPNsense Preapare - DHCP range (2/2)
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: "/opnsense/dhcpd/lan/range/to"
+    value: "{{ hetzner_pve_network_vm_lan_dhcp_to }}"
+    pretty_print: true
+  when: hetzner_pve_setup_opnsense_settings_lan_dhcpd
+
+- name: OPNsense Preapare - Firewall - Allow Ansible host IP
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/filter/rule[descr/text()="OWN_IP"]/pass
+    value: "pass"
+    pretty_print: true
+
+- name: OPNsense Preapare - Firewall - Allow Ansible host IP to WAN Interface
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/filter/rule[descr/text()="OWN_IP"]/interface
+    value: "wan"
+    pretty_print: true
+
+- name: OPNsense Preapare - Firewall - Set Ansible host IP to rule
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/filter/rule[descr/text()="OWN_IP"]/source/address
+    value: "{{ ipify_public_ip }}/32"
+    pretty_print: true
+
+- name: OPNsense Preapare - Firewall - Set destination to rule
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/filter/rule[descr/text()="OWN_IP"]/destination/any
+    value: "1"
+    pretty_print: true
+
+- name: OPNsense Preapare - Firewall - Set protocol to rule
+  community.general.xml:
+    path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
+    xpath: /opnsense/filter/rule[descr/text()="OWN_IP"]/ipprotocol
+    value: inet
+    pretty_print: true
+
+- include_tasks: 09_opnsense_prepare_user.yml
+
+- include_tasks: 09_opnsense_setup.yml
