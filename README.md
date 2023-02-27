@@ -15,7 +15,8 @@ I made this project just for fun, it allows you to create a proxmox host on Hetz
 #### Requirements
   
   * `ansible-galaxy collection install community.hrobot` - Need for Hetzner API
-  * Tested on Hetzner Bare Metal EX43 at HEL1 - last run 19.10.2022
+  * Tested on Hetzner Bare Metal EX43 at FSN1-DC7 - last successfully run 27.02.2023 (storage & opnsense)
+  * Tested on Hetzner Bare Metal EX43 at HEL1 - last successfully run 19.10.2022 (full)
 
 #### Variables
  * `hetzner_pbs_setup` [default: `true` ]: Install Proxmox Backup Server 
