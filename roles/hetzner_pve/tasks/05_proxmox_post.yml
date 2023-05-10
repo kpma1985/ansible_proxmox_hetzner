@@ -48,6 +48,27 @@
   notify: Restart vmhost
   when: not hetzner_pve_xshock_installed.stat.exists
 
+- name: PROXMOX post tasks - Deploy Hetzner Encrypt Extra Drives in RAID0
+  ansible.builtin.template:
+    src: "drive_encrypt.sh.j2"
+    dest: /tmp/drive_encrypt_{{ drive_index }}.sh
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ hetzner_pve_drives_encrypt }}"
+  loop_control:
+    index_var: drive_index
+    loop_var: drive
+  when: hetzner_pve_swraid == 0
+
+- name: PROXMOX post tasks - Start Encrypt Extra Drives
+  ansible.builtin.shell: '/tmp/drive_encrypt_{{ drive_index }}.sh'
+  loop: "{{ hetzner_pve_drives_encrypt }}"
+  loop_control:
+    index_var: drive_index  
+  notify: Restart vmhost
+  when: hetzner_pve_swraid == 0
+
 ### Remove cisofy repo - breaks "apt update"
 - name: PROXMOX post tasks - Remove cisofy repository
   file:

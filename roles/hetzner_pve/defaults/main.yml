@@ -12,6 +12,22 @@ hetzner_pve_luks_pass: secret
 hetzner_pve_root_pass: secret
 hetzner_pve_ssh_keys: []
 
+# RAID level to use
+hetzner_pve_swraid: 0
+# encrypt extra drives; only runs in a RAID0 config (hetzner_pve_swraid=0)
+hetzner_pve_drives_encrypt:
+  - path: '/dev/sdb'
+    partition1:
+      path: '/dev/sdb1'
+      crypt_name: 'sdb1_crypt'
+      crypt_path: '/dev/mapper/sdb1_crypt'
+    vg:
+      name: 'vg1'
+    lv:
+      name: 'ext'
+      path: '/dev/vg1/ext'
+      mount: '/mnt/ext'
+
 ### ACME - letsencrypt
 hetzner_pve_create_acme: true
 hetzner_pve_acme_mail: mail@example.com

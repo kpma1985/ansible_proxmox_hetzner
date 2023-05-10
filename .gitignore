@@ -1,0 +1,3 @@
+ansible.cfg
+roles/hetzner_pve/vars
+**/*.local
