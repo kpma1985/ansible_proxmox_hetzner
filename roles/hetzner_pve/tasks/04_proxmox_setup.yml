@@ -13,13 +13,29 @@
 - name: fix
   shell: apt -q -y purge firmware-bnx2x firmware-realtek firmware-linux firmware-linux-free firmware-linux-nonfree
 
-
 - name: PROXMOX - Change postfix mailer type
   debconf:
     name=postfix
     question="postfix/main_mailer_type"
     value="'Local only'"
     vtype="string"
+
+- name: PROXMOX - Change postfix mailer name
+  debconf:
+    name=postfix
+    question="postfix/mailname"
+    value="{{ hetzner_pve_acme_domain }}"
+    vtype="string"
+
+- name: PROXMOX - Install proxmox and some packages2
+  shell: apt -q -y install proxmox-ve postfix open-iscsi python3-pip libguestfs-tools unzip sshpass telnet expect python3 openssh-server > /tmp/proxmox_apt.log
+  register: hetzner_pve_proxmox_install
+  
+
+- name: PROXMOX - Install proxmox and some packages2b
+  shell: apt -q -y install proxmox-ve >> /tmp/proxmox_apt.log
+  register: hetzner_pve_proxmox_install
+  
 
 - name: PROXMOX - Install proxmox and some packages
   ansible.builtin.apt:
@@ -37,11 +53,14 @@
       - python3
       - openssh-server
   register: hetzner_pve_proxmox_install
+  when: false
+  
 
 - name: PROXMOX - Install custom packages
   ansible.builtin.apt:
     pkg: "{{ item }}"
   with_items: "{{ hetzner_pve_custom_packages }}"
+  
 
 
 ### Remove enterprise pve repo
@@ -74,3 +93,4 @@
 - name: Flush Handlers
   meta: flush_handlers
   when: hetzner_pve_proxmox_install.changed
+  
