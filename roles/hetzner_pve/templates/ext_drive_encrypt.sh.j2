@@ -1,5 +1,5 @@
 #!/bin/bash
-log() 
+log() {
   echo "********************* $1 ********************"
 }
 
@@ -24,14 +24,6 @@ mkfs.ext4 -F {{ drive.lv.path }}
 mkdir {{ drive.lv.mount }}
 echo '{{ drive.lv.path }} {{ drive.lv.mount }} ext4 defaults 0 0' >> /etc/fstab
 mount {{ drive.lv.mount }}
-
-# TODO move out
-tee -a /etc/pve/storage.cfg << EOF > /dev/null
-lvmthin: ext
-  content images, iso
-  thinpool ext
-  vgname {{ drive.vg.name }}
-EOF
 
 log "add {{ drive.partition1.crypt_path }} to crypttab"
 UUID=$(cryptsetup luksUUID {{ drive.partition1.path }})

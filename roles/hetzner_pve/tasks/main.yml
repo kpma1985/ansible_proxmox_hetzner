@@ -30,16 +30,21 @@
   when: hetzner_pve_installed.stat.exists == false
 
 - ansible.builtin.include_tasks: 05_proxmox_post.yml
-  when: hetzner_pve_xshock_installed.stat.exists == false
+#  when: hetzner_pve_xshock_installed.stat.exists == false
+  tags: ["dbg"]
 
 - ansible.builtin.include_tasks: 07_storagebox_setup.yml
   when: hetzner_pve_storagebox_setup
+  tags: ["dbg_skip"]
 
 - ansible.builtin.include_tasks: 08_cloudimages_setup.yml
   when: hetzner_pve_cloud_images_setup
+  tags: ["dbg_skip"]
 
 - ansible.builtin.include_tasks: 09_opnsense_prepare.yml
   when: hetzner_pve_setup_opnsense
+  tags: ["dbg_skip"]
 
 - ansible.builtin.include_tasks: 10_pbs_setup.yml
   when: hetzner_pbs_setup
+  tags: ["dbg_skip"]

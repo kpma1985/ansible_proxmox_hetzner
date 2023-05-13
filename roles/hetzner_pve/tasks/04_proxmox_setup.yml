@@ -60,8 +60,6 @@
   ansible.builtin.apt:
     pkg: "{{ item }}"
   with_items: "{{ hetzner_pve_custom_packages }}"
-  
-
 
 ### Remove enterprise pve repo
 - name: PROXMOX - remove enterprise repo

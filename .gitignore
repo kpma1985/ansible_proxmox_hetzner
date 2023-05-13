@@ -3,3 +3,4 @@ roles/hetzner_pve/vars
 **/*.local
 **/*.out
 **/*.k
+**/*.log
