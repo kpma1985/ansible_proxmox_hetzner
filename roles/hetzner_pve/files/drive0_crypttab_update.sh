@@ -1,1 +1,1 @@
-sed '1s/.*/,keyscript=decrypt_keyctl/' /etc/crypttab
+sed -i '1s/$/,initramfs,keyscript=decrypt_keyctl/' /etc/crypttab

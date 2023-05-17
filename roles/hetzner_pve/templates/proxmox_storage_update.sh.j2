@@ -1,0 +1,20 @@
+#!/bin/bash
+{% for drive in hetzner_pve_ext_drives_encrypt %}
+tee -a /etc/pve/storage.cfg << EOF > /dev/null
+#lvmthin: {{ drive.lv.name }}
+#  content images
+#  thinpool {{ drive.lv.name }}
+#  vgname {{ drive.vg.name }}
+
+dir: {{ drive.lv.name }}
+  path {{ drive.lv.mount }}
+  content images, vztmpl, iso, backup, snippets
+
+#dir: {{ drive.lv.name }}
+#  path {{ drive.lv.mount }}
+#  content backup
+#  prune-backups keep-last=7
+#  max-protected-backups 3
+
+EOF
+{% endfor %}
