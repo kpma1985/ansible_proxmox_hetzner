@@ -2,8 +2,7 @@
 - name: PROXMOX post tasks - Install required packages for unattended setup
   pip:
     name: pexpect
-  when: not hetzner_pve_acme_acc_registered.stat.exists
-  
+  when: not hetzner_pve_acme_acc_registered.stat.exists 
 
 - name: PROXMOX post tasks - Register a new ACME account
   expect:
@@ -19,7 +18,7 @@
   command: "{{ item }}"
   with_items:
     - "pvenode config set --acme domains={{ hetzner_pve_acme_domain }}"
-    - "pvenode acme cert order"
+    - "pvenode acme cert order --force"
   register: acme_result
   when:
     - not hetzner_pve_proxy_cert_exists.stat.exists
@@ -60,37 +59,5 @@
     src: sources.list.j2
     dest: /etc/apt/sources.list
     mode: 0644
-
-- name: Deploy Hetzner Drive0 Crypttab Update in RAID0
-  copy:
-    src: drive0_crypttab_update.sh
-    dest: /tmp/drive0_crypttab_update.sh
-    owner: root
-    group: root
-    mode: '0755'
-
-- name: Start Drive0 Crypttab Update in RAID0
-  ansible.builtin.shell: '/tmp/drive0_crypttab_update.sh'
-  when: hetzner_pve_swraid == 0
-
-- name: Deploy Hetzner Encrypt Extra Drives in RAID0
-  ansible.builtin.template:
-    src: "ext_drive_encrypt.sh.j2"
-    dest: /tmp/ext_drive_encrypt_{{ drive_index }}.sh
-    owner: root
-    group: root
-    mode: '0755'
-  loop: "{{ hetzner_pve_ext_drives_encrypt }}"
-  loop_control:
-    index_var: drive_index
-    loop_var: drive
-  when: hetzner_pve_swraid == 0
-
-- name: Start Encrypt Extra Drives
-  ansible.builtin.shell: '/tmp/ext_drive_encrypt_{{ drive_index }}.sh'
-  loop: "{{ hetzner_pve_ext_drives_encrypt }}"
-  loop_control:
-    index_var: drive_index
-  when: hetzner_pve_swraid == 0
 
 - meta: flush_handlers
