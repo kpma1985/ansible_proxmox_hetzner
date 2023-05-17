@@ -1,0 +1,73 @@
+DEFAULT_HOST="vmbox.uplight.link"
+
+export LC_ALL="C.UTF-8"
+
+function cwd () {
+	# Absolute path to this script, e.g. /home/user/bin/foo.sh
+	SCRIPT=$(readlink -f "$0")
+	# Absolute path this script is in, thus /home/user/bin
+	SCRIPTPATH=$(dirname "$SCRIPT")
+	echo $SCRIPTPATH
+}
+PTOOL=$(cwd)
+PROOT="$PTOOL/.."
+
+# USAGE:
+# . run.local [_DBG_] <ansible-playbook_args>
+# If -l is not specified, it is added by default to 'vmbox.uplight.link'
+
+#!/bin/bash
+# TODO: we could use "$@" instead of this, see http://wiki.x/bash%20scripting/#%40args-propagate-parameters
+whitespace="[[:space:]]"
+P=''
+for i in "$@"
+do
+    if [[ $i =~ $whitespace ]]
+    then
+        i=\"$i\"
+    fi
+    if [[ "$i" != "_"* ]]; then
+      P="$P $i"
+    fi
+done
+
+if [[ ! "$*" == *"-l"* ]]; then
+  P="$P -l $DEFAULT_HOST"
+fi
+if [[ "$*" == *"_DBG_"* ]]; then
+  P="$P --skip-tags \"dbg_skip\" -vvv"
+#  P="$P --tags \"dbg\" --skip-tags \"dbg_skip\" -vvv"
+fi
+
+if [[ "$*" == *"_RSC_"* ]]; then
+  ansible-playbook $PTOOL/rescue.yml -i $PROOT/inventory/hosts.local -l $DEFAULT_HOST --skip-tags "skip"
+fi
+
+if [[ "$*" == *"_TST_"* ]]; then
+  ansible-playbook $PTOOL/tst.yml -i $PROOT/inventory/hosts.local -l $DEFAULT_HOST --skip-tags "skip"
+  return 0
+fi
+
+echo "******************* Ansible Parameters ********************"
+echo $P
+
+echo "******************* Ansible Hosts ********************"
+# LC_ALL=\"C.UTF-8\" needed due to https://github.com/NixOS/nixpkgs/issues/223151
+bash -c "ansible-playbook $PROOT/playbook.yml -i $PROOT/inventory/hosts.local --list-hosts $P"
+
+echo "******************* Ansible Tasks Plan ********************"
+bash -c "ansible-playbook $PROOT/playbook.yml -i $PROOT/inventory/hosts.local --list-tasks $P"
+
+#sleep 5
+
+echo "************** Ansible Execution started **************"
+if [[ "$*" == *"DBG"* ]]; then
+  bash -c "ansible-playbook $PROOT/playbook.yml -i $PROOT/inventory/hosts.local $P | tee $PTOOL/hzn.log"
+else
+  rm -rf $PTOOL/nohup.out
+  #nohup bash -c "ansible-playbook playbook.yml -i inventory/hosts.local $P" &
+  ansible-playbook $PROOT/playbook.yml -i $PROOT/inventory/hosts.local $P | tee $PTOOL/hzn.log
+  sleep 1
+  echo "Tail Output:"
+  tail -f $PTOOL/nohup.out
+fi

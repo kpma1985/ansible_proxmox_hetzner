@@ -1,0 +1,5 @@
+[all:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ControlMaster=auto -o ControlPersist=60s'
+
+[vmhost]
+vmbox2.uplight.link ansible_host=195.201.105.148 ENV_INVENTORY_SRV_NO=2018046

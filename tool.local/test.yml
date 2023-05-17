@@ -1,0 +1,23 @@
+# add here bits and pieces you want to isolate and test-out. To have access to variables, etc. leave the roles below in place
+- name: test
+  hosts: vmhost
+  gather_facts: false
+  tasks:
+    - name: HETZNER - Get all SSH Keys
+      community.hrobot.ssh_key_info:
+        hetzner_user: "{{ hetzner_pve_hetzner_api_user }}"
+        hetzner_password: "{{ hetzner_pve_hetzner_api_pass }}"
+      register: ssh_keys
+      delegate_to: localhost
+
+    - name: OPNsense Preapare - Get ansible host IP for setup OPNsense
+      community.general.ipify_facts.ipify_facts:
+      register: public_ip
+      connection: local
+
+    - name: print
+      debug:
+        msg: echo {{ public_ip }}
+
+  roles:
+    - { role: '../roles/hetzner_pve', tags: ['skip'] }
