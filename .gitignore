@@ -5,4 +5,4 @@ roles/hetzner_pve/vars
 **/*.log
 **/*.swp
 
-#**/*.local
+**/*.local

@@ -55,7 +55,7 @@
     reset_type: hardware
   delegate_to: localhost
   when: ansible_hostname != 'rescue'
-  
+
 - name: Wait for system comming up after activating Rescue
   ansible.legacy.wait_for:
     port: 22
@@ -86,4 +86,4 @@
     owner: root
     group: root
     mode: '0755'
-  when: hetzner_pve_swraid == 0
+  when: hetzner_pve_swraid == 0 and ansible_hostname == 'rescue'

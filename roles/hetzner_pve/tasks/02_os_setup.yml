@@ -12,15 +12,6 @@
     seconds: 15
   tags: dbg_skip
 
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
-  tags: dbg_skip
-
-- name: OS - Pause for 15 seconds
-  ansible.builtin.pause:
-    seconds: 15
-  tags: dbg_skip
-
 - name: OS - Update Installimage status
   ansible.builtin.file:
     path: /etc/hetzner_pve_run

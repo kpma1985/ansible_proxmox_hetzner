@@ -32,7 +32,7 @@
   tags: dbg_skip
 
 - ansible.builtin.include_tasks: 05_proxmox_post.yml
-#  when: hetzner_pve_xshock_installed.stat.exists == false
+  when: hetzner_pve_xshock_installed.stat.exists == false
   tags: dbg_skip
 
 - ansible.builtin.include_tasks: 07_storagebox_setup.yml

@@ -2,18 +2,18 @@ log() {
   echo "********************* $1 ********************"
 }
 
+apt update && apt install -y parted lvm2 cryptsetup
+
 {% for drive in hetzner_pve_ext_drives_encrypt %}
     log "wiping drive {{ drive.path }}"
     wipefs -a {{ drive.path }}
 
     log "partitioning disk {{ drive.path }}"
-    apt install -y parted
     parted --script {{ drive.path }} mklabel gpt
     parted --script {{ drive.path }} mkpart primary 0% 100%
     mkfs.ext4 -F {{ drive.partition1.path }}
 
     log "encrypting partition {{ drive.partition1.path }}"
-    apt update && apt install -y lvm2 cryptsetup
     echo -e "{{ hetzner_pve_luks_pass }}" | cryptsetup -q -v luksFormat {{ drive.partition1.path }}
     echo -e "{{ hetzner_pve_luks_pass }}" | cryptsetup open {{ drive.partition1.path }} {{ drive.partition1.crypt_name }}
 

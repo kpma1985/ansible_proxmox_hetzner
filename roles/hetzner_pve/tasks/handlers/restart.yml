@@ -3,7 +3,6 @@
   ansible.legacy.reboot:
     post_reboot_delay: 20
     test_command: "echo -ne {{ hetzner_pve_luks_pass }} > /lib/cryptsetup/passfifo"
-#    test_command: "echo -ne {{ hetzner_pve_luks_pass }} > /root/passfifo0 && % for drive in hetzner_pve_ext_drives_encrypt %} echo -ne  hetzner_pve_luks_pass }} > /root/passfifo{{ loop.index0 + 1 }} % endfor  %}"
 
 - name: Wait for system comming up after unlock
   ansible.legacy.wait_for:

@@ -25,17 +25,7 @@
     name=postfix
     question="postfix/mailname"
     value="{{ hetzner_pve_acme_domain }}"
-    vtype="string"
-
-#- name: PROXMOX - Install proxmox and some packages2
-#  shell: apt -q -y install proxmox-ve postfix open-iscsi python3-pip libguestfs-tools unzip sshpass telnet expect python3 openssh-server > /tmp/proxmox_apt.log
-#  register: hetzner_pve_proxmox_install
-  
-
-#- name: PROXMOX - Install proxmox and some packages2b
-#  shell: apt -q -y install proxmox-ve >> /tmp/proxmox_apt.log
-#  register: hetzner_pve_proxmox_install
-  
+    vtype="string"  
 
 - name: PROXMOX - Install proxmox and some packages
   ansible.builtin.apt:
@@ -53,8 +43,6 @@
       - python3
       - openssh-server
   register: hetzner_pve_proxmox_install
-#  when: false
-
 
 - name: PROXMOX - Install custom packages
   ansible.builtin.apt:
