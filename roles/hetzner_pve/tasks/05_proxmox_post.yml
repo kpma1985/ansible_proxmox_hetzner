@@ -12,7 +12,7 @@
       "Do you agree to the above terms?" : 'y'
     echo: true
   when:
-#    - not hetzner_pve_acme_acc_registered.stat.exists
+    - not hetzner_pve_acme_acc_registered.stat.exists
     - hetzner_pve_create_acme
 
 - name: PROXMOX post tasks - Register a new ACME account
@@ -22,7 +22,7 @@
     - "pvenode acme cert order --force"
   register: acme_result
   when:
-#    - not hetzner_pve_proxy_cert_exists.stat.exists
+    - not hetzner_pve_proxy_cert_exists.stat.exists
     - hetzner_pve_create_acme
 
 - name: PROXMOX post tasks - Copy xshock post install script
