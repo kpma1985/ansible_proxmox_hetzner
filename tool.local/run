@@ -7,7 +7,7 @@ function cwd () {
         echo $SCRIPT_DIR
 }
 PRUN=$(cwd)
-PRUN_NAME="tool"
+PRUN_NAME="tool.local"
 PROOT=$(realpath "$PRUN/..")
 
 # Default values
