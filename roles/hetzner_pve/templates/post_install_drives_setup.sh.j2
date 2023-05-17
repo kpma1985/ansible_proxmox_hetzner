@@ -1,0 +1,51 @@
+log() {
+  echo "********************* $1 ********************"
+}
+
+{% for drive in hetzner_pve_ext_drives_encrypt %}
+    log "wiping drive {{ drive.path }}"
+    wipefs -a {{ drive.path }}
+
+    log "partitioning disk {{ drive.path }}"
+    apt install -y parted
+    parted --script {{ drive.path }} mklabel gpt
+    parted --script {{ drive.path }} mkpart primary 0% 100%
+    mkfs.ext4 -F {{ drive.partition1.path }}
+
+    log "encrypting partition {{ drive.partition1.path }}"
+    apt update && apt install -y lvm2 cryptsetup
+    echo -e "{{ hetzner_pve_luks_pass }}" | cryptsetup -q -v luksFormat {{ drive.partition1.path }}
+    echo -e "{{ hetzner_pve_luks_pass }}" | cryptsetup open {{ drive.partition1.path }} {{ drive.partition1.crypt_name }}
+
+    log "formatting encrypted partition {{ drive.partition1.crypt_path }} and creating VG {{ drive.vg.name }} and LV {{ drive.lv.name }}"
+    pvcreate {{ drive.partition1.crypt_path }}
+    vgcreate {{ drive.vg.name }} {{ drive.partition1.crypt_path }}
+    lvcreate -l 100%FREE --name {{ drive.lv.name }} {{ drive.vg.name }}
+    # --type thin-pool causes err: Module dm-thin-pool not found in directory /lib/modules/6.3.1"
+    #lvcreate --type thin-pool -l 100%FREE --name {{ drive.lv.name }} {{ drive.vg.name }}
+
+    log "creating ext4 for {{ drive.lv.path }}"
+    mkfs.ext4 -F {{ drive.lv.path }}
+
+    log "setup /etc/fstab mount {{ drive.lv.path }} => {{ drive.lv.mount }}"
+    mkdir {{ drive.lv.mount }}
+    echo '{{ drive.lv.path }} {{ drive.lv.mount }} ext4 defaults 0 0' >> /etc/fstab
+    mount {{ drive.lv.mount }}
+
+    log "add {{ drive.partition1.crypt_path }} to /etc/crypttab"
+    UUID=$(cryptsetup luksUUID {{ drive.partition1.path }})
+    echo "{{ drive.partition1.crypt_name }} UUID=$UUID none luks,discard,initramfs,keyscript=decrypt_keyctl" >> /etc/crypttab
+
+    log "drive {{ drive.path }} encrypted"
+{% endfor %}
+
+log "add decrypt_keyctl to master drive"
+sed -i '1s/$/,initramfs,keyscript=decrypt_keyctl/' /etc/crypttab
+
+log "update /etc/crypttab keyfile field for all drives"
+# see https://unix.stackexchange.com/a/392286
+sed 's/[^ ]*/crypt_disks/'3 -i /etc/crypttab
+
+log "update-initramfs start"
+update-initramfs -c -k all
+log "update-initramfs end"

@@ -1,0 +1,9 @@
+#!/bin/bash
+{% for drive in hetzner_pve_ext_drives_encrypt %}
+	tee -a /etc/pve/storage.cfg << EOF > /dev/null
+	lvmthin: {{ drive.lv.name }}
+	  content images, iso
+	  thinpool {{ drive.lv.name }}
+	  vgname {{ drive.vg.name }}
+	EOF
+{% endfor %}

@@ -1,79 +1,32 @@
 ---
-# needed to avoid system boot locks due to possibly leftover encrypted ext drive
-#OS tries to access it at boot time via fuse for a reason
-- name: HETZNER - Deploy Wipe Drives
-  ansible.builtin.template:
-    src: "drives_wipe.sh.j2"
-    dest: /tmp/drives_wipe.sh
-    owner: root
-    group: root
-    mode: '0755'
-  when: hetzner_pve_swraid == 0 and ansible_hostname == 'rescue'
-
-- name: HETZNER - Wipe Drives
-  ansible.builtin.shell: '/tmp/drives_wipe.sh'
-  when: hetzner_pve_swraid == 0 and ansible_hostname == 'rescue'
-
 - name: OS - Start installimage
   ansible.builtin.shell: '/root/.oldroot/nfs/install/installimage -a -c /tmp/setup.conf -u yes -x /tmp/post_install.sh'
   notify: Restart vmhost
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
+  tags: dbg_skip
 
 - name: OS - Pause for 15 seconds
   ansible.builtin.pause:
     seconds: 15
-
-- name: Deploy Hetzner Drive0 Crypttab Update in RAID0
-  copy:
-    src: drive0_crypttab_update.sh
-    dest: /tmp/drive0_crypttab_update.sh
-    owner: root
-    group: root
-    mode: '0755'
-  tags: ["dbg"]
-
-- name: Start Drive0 Crypttab Update in RAID0
-  ansible.builtin.shell: '/tmp/drive0_crypttab_update.sh'
-  when: hetzner_pve_swraid == 0
-  tags: ["dbg"]
-
-- name: Deploy Hetzner Encrypt Extra Drives in RAID0
-  ansible.builtin.template:
-    src: "ext_drive_encrypt.sh.j2"
-    dest: /tmp/ext_drive_encrypt_{{ drive_index }}.sh
-    owner: root
-    group: root
-    mode: '0755'
-  loop: "{{ hetzner_pve_ext_drives_encrypt }}"
-  loop_control:
-    index_var: drive_index
-    loop_var: drive
-  when: hetzner_pve_swraid == 0
-  tags: ["dbg"]
-
-- name: Start Encrypt Extra Drives
-  ansible.builtin.shell: '/tmp/ext_drive_encrypt_{{ drive_index }}.sh'
-  loop: "{{ hetzner_pve_ext_drives_encrypt }}"
-  loop_control:
-    index_var: drive_index
-  when: hetzner_pve_swraid == 0
-  notify: Restart vmhost
-  tags: ["dbg"]
+  tags: dbg_skip
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
+  tags: dbg_skip
 
 - name: OS - Pause for 15 seconds
   ansible.builtin.pause:
     seconds: 15
+  tags: dbg_skip
 
 - name: OS - Update Installimage status
   ansible.builtin.file:
     path: /etc/hetzner_pve_run
     state: touch
     mode: u=rw,g=r,o=r
+  tags: dbg_skip
 
 - name: OS - Update root user password
   ansible.builtin.user:
@@ -82,3 +35,4 @@
     update_password: always
     password: "{{ hetzner_pve_root_pass | password_hash('sha512') }}"
   no_log: true
+  tags: dbg_skip
