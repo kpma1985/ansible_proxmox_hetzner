@@ -1,5 +1,7 @@
 [all:vars]
-ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+# needed, otherwise Hetzner server freezes durin Proxmox install packages
+# '-o ServerAliveInterval=30 -o ControlMaster=auto -o ControlPersist=60s'
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ControlMaster=auto -o ControlPersist=60s'
 
 [vmhost]
 vmhost01.xxxxx ansible_host=xxxx ENV_INVENTORY_SRV_NO=xxxx

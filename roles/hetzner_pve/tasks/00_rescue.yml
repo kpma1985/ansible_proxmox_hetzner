@@ -46,7 +46,23 @@
       authorized_keys: "{{ ssh_keys.ssh_keys | map(attribute='fingerprint') | list }}"
   delegate_to: localhost
   when: ansible_hostname != 'rescue'
-  
+
+- name: HETZNER - Reset SERVER
+  community.hrobot.reset:
+    hetzner_user: "{{ hetzner_pve_hetzner_api_user }}"
+    hetzner_password: "{{ hetzner_pve_hetzner_api_pass }}"
+    server_number: "{{ ENV_INVENTORY_SRV_NO }}"
+    reset_type: hardware
+  delegate_to: localhost
+  when: ansible_hostname != 'rescue'
+
+- name: Wait for system comming up after activating Rescue
+  ansible.legacy.wait_for:
+    port: 22
+    host: "{{ inventory_hostname }}"
+    delay: 10
+  delegate_to: localhost
+  when: ansible_hostname != 'rescue'
 
 # needed to avoid system boot locks due to possibly leftover encrypted ext drive
 #OS tries to access it at boot time via fuse for a reason
@@ -58,26 +74,16 @@
     group: root
     mode: '0755'
   when: hetzner_pve_swraid == 0 and ansible_hostname == 'rescue'
-  
 
-- name: HETZNER - Wipe Drives 
+- name: HETZNER - Wipe Drives
   ansible.builtin.shell: '/tmp/drives_wipe.sh'
   when: hetzner_pve_swraid == 0 and ansible_hostname == 'rescue'
-  
 
-- name: HETZNER - Reset SERVER
-  community.hrobot.reset:
-    hetzner_user: "{{ hetzner_pve_hetzner_api_user }}"
-    hetzner_password: "{{ hetzner_pve_hetzner_api_pass }}"
-    server_number: "{{ ENV_INVENTORY_SRV_NO }}"
-    reset_type: hardware
-  delegate_to: localhost
-  when: ansible_hostname != 'rescue'
-  
-
-- name: Wait for system comming up after activating Rescue
-  ansible.legacy.wait_for:
-    port: 22
-    host: "{{ inventory_hostname }}"
-    delay: 10
-  delegate_to: localhost
+- name: Deploy Hetzner Post Install Drives Setup
+  ansible.builtin.template:
+    src: "post_install_drives_setup.sh.j2"
+    dest: /tmp/post_install_drives_setup.sh
+    owner: root
+    group: root
+    mode: '0755'
+  when: hetzner_pve_swraid == 0 and ansible_hostname == 'rescue'

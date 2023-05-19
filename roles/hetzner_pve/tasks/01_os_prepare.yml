@@ -45,6 +45,18 @@
     mode: '0755'
   when: not hetzner_pve_installed.stat.exists
 
+- name: Deploy Hetzner Post Install Drives Setup
+  ansible.builtin.template:
+    src: "post_install_drives_setup.sh.j2"
+    dest: /tmp/post_install_drives_setup.sh
+    owner: root
+    group: root
+    mode: '0755'
+  when: hetzner_pve_swraid == 0
+
+- name: Append /tmp/post_install_drives_setup.sh to /tmp/post_install.sh
+  shell: cat /tmp/post_install_drives_setup.sh >> /tmp/post_install.sh
+
 - name: Deploy ssh key
   ansible.builtin.template:
     src: authorized_keys.j2
