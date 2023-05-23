@@ -62,13 +62,11 @@ I made this project just for fun, it allows you to create a proxmox host on Hetz
 
       Please edit tool/.env file accordingly and run:
 
-      ```sh
       cd tool
       . run                    # Run playbook.yml with default settings
       . run _TST_              # Run tool/test.yml with default settings; this can be useful to execute specific tasks from the playbook.yml, in isolation
       . run _RSC_ --nh 0 && . run -vvv   # Run tool/rescue.yml in same thread and after run main playbook with verbosity level 1 and NOHUP activated
       . run --help  # shows the help page of this tool
-      ```
 
 #### Todos
 
