@@ -1,0 +1,107 @@
+#!/bin/bash
+
+DEFAULT_HOST="vmbox.uplight.link"
+
+export LC_ALL="C.UTF-8"
+
+function cwd () {
+	# Absolute path to this script, e.g. /home/user/bin/foo.sh
+	SCRIPT=$(readlink -f "$0")
+	# Absolute path this script is in, thus /home/user/bin
+	SCRIPTPATH=$(dirname "$SCRIPT")
+	echo $SCRIPTPATH
+}
+PTOOL=$(cwd)
+PROOT="$PTOOL/.."
+
+# USAGE:
+# . run.local [_DBG_] <ansible-playbook_args>
+# If -l is not specified, it is added by default to 'vmbox.uplight.link'
+
+pcmd()
+{
+    usage() {
+          if [[ "$PINVALID" == "1" ]]; then
+            return;
+          fi;
+          echo "pcmd: -n <arg> [-r <arg>|root] [-c <arg>|<empty>] [-t <arg>|[]]" >&2; export PINVALID=1; 
+    }
+
+    export PINVALID=0
+    local OPTIND o a
+    while getopts ":l:i:--skip-tags:_DBG_:_RSC_:?:" o; do
+        case "${o}" in
+            l)
+                export PLIMIT="${OPTARG}"
+                ;;
+            i)
+                export PINV="${OPTARG}"
+                ;;
+            --skip-tags)
+                export PSKIP_TAGS="${OPTARG}"
+                ;;
+
+            _DBG_)
+                export PDBG="1"
+                ;;
+            _RSC_)
+                export PRSC="1"
+                ;;
+            _TST_)
+                export PTST="1"
+                ;;
+            \?)
+                usage
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+}
+
+pcmd "$@"
+
+if [[ ! $PLIMIT ]]; then
+  PLIMIT=$DEFAULT_HOST
+fi
+if [[ "$PDBG" == "1" ]]; then
+  PSKIP_TAGS="dbg_skip"
+  P
+fi
+
+if [[ "$*" == *"_DBG_"* ]]; then
+  P="$P --skip-tags \"dbg_skip\" -vvv"
+#  P="$P --tags \"dbg\" --skip-tags \"dbg_skip\" -vvv"
+fi
+
+if [[ "$*" == *"_RSC_"* ]]; then
+  ansible-playbook $PTOOL/rescue.yml -i $PROOT/inventory/hosts.local -l $DEFAULT_HOST --skip-tags "skip"
+fi
+
+if [[ "$*" == *"_TST_"* ]]; then
+  ansible-playbook $PTOOL/tst.yml -i $PROOT/inventory/hosts.local -l $DEFAULT_HOST --skip-tags "skip"
+  return 0
+fi
+
+echo "******************* Ansible Parameters ********************"
+echo $P
+
+echo "******************* Ansible Hosts ********************"
+# LC_ALL=\"C.UTF-8\" needed due to https://github.com/NixOS/nixpkgs/issues/223151
+bash -c "ansible-playbook $PROOT/playbook.yml -i $PROOT/inventory/hosts.local --list-hosts $P"
+
+echo "******************* Ansible Tasks Plan ********************"
+bash -c "ansible-playbook $PROOT/playbook.yml -i $PROOT/inventory/hosts.local --list-tasks $P"
+
+#sleep 5
+
+echo "************** Ansible Execution started **************"
+if [[ "$*" == *"DBG"* ]]; then
+  bash -c "ansible-playbook $PROOT/playbook.yml -i $PROOT/inventory/hosts.local $P | tee $PTOOL/hzn.log"
+else
+  rm -rf $PTOOL/nohup.out
+  #nohup bash -c "ansible-playbook playbook.yml -i inventory/hosts.local $P" &
+  ansible-playbook $PROOT/playbook.yml -i $PROOT/inventory/hosts.local $P | tee $PTOOL/hzn.log
+  sleep 1
+  echo "Tail Output:"
+  tail -f $PTOOL/nohup.out
+fi

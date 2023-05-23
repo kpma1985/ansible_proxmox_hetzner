@@ -76,11 +76,13 @@
     group: root
     mode: '0755'
   when: hetzner_pve_swraid == 0
+  tags: dbg_skip
 
 - name: Start Proxmox Ext Drive Storage Update
   ansible.builtin.shell: '/tmp/proxmox_storage_update.sh'
   when: hetzner_pve_swraid == 0
   notify: Restart vmhost
+  tags: dbg_skip
 
 # - name: PROXMOX - Remove old Debian kernel
 #   ansible.builtin.apt:
