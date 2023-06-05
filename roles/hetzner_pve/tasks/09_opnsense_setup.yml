@@ -40,6 +40,14 @@
 
 - name: OPNsense - Resize disk
   ansible.builtin.shell: qm resize {{ hetzner_pve_opnsense_vm_settings.id }} scsi0 {{ hetzner_pve_opnsense_vm_settings.disk_size }}
+  ignore_errors: true
+
+- name: OPNsense - Resize disk
+  ansible.builtin.shell: qm resize {{ hetzner_pve_opnsense_vm_settings.id }} scsi0 {{ hetzner_pve_opnsense_vm_settings.disk_size }}
+  ignore_errors: true
+
+- name: OPNsense - Resize disk
+  ansible.builtin.shell: qm resize {{ hetzner_pve_opnsense_vm_settings.id }} scsi0 {{ hetzner_pve_opnsense_vm_settings.disk_size }}
 
 - name: Wait for all qemu-img processes to exit
   wait_for:

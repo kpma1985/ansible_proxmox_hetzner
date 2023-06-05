@@ -1,7 +1,5 @@
 [all:vars]
-# needed, otherwise Hetzner server freezes durin Proxmox install packages
-# '-o ServerAliveInterval=30 -o ControlMaster=auto -o ControlPersist=60s'
 ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ControlMaster=auto -o ControlPersist=60s'
 
 [vmhost]
-vmhost01.xxxxx ansible_host=xxxx ENV_INVENTORY_SRV_NO=xxxx
+vmbox.uplight.link ansible_host=195.201.105.148 ENV_INVENTORY_SRV_NO=2018046

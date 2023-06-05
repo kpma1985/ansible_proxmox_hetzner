@@ -1,0 +1,49 @@
+# add here bits and pieces you want to isolate and test-out. To have access to variables, etc. leave the roles below in place
+- name: vmbox_localnet
+  hosts: vmhost
+  user: root
+  gather_facts: false
+  vars:
+    img_debian_url: https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.7.0-amd64-netinst.iso
+    wag_vm_settings:
+      name: wag
+      id: 9001
+      memory: 4096
+      storage: local
+      disk_size: +7G
+      wan_bridge: vmbr0
+      lan_bridge: vmbr99
+      url: "{{ img_debian_url }}"
+      img_name: "{{ img_debian_url | basename }}"
+
+  tasks:
+    - name: VMBOX - import setup01 vars
+      ansible.builtin.include_vars: ../roles/hetzner_pve/vars/main.yml
+
+    - name: VMBOX - set SSH Port
+      set_fact:
+        ansible_port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
+
+    - name: VMBOX - gather facts
+      ansible.builtin.setup:
+
+    - name: VMBOX - Download Debian Image
+      ansible.builtin.get_url:
+        url: "{{ wag_vm_settings.url }}"
+        dest: "/var/lib/vz/template/iso/{ wag_vm_settings.img_name }}"
+
+    - name: VMBOX - Do we destroy existing WAG?
+      ansible.builtin.shell: |
+        qm stop {{ wag_vm_settings.id }}
+        qm destroy {{ wag_vm_settings.id }}
+      ignore_errors: true
+
+    - name: VMBOX - Create VM
+      ansible.builtin.shell: |
+        qm create {{ wag_vm_settings.id }} \
+        --onboot 1 --agent 1 --name {{ wag_vm_settings.name }} \
+        --memory {{ wag_vm_settings.memory }} \
+        --net0 virtio={{ hostvars[inventory_hostname].ansible_default_ipv4.macaddress }},bridge={{ wag_vm_settings.wan_bridge }},link_down=1 \
+        --args "-drive file=fat:rw:/tmp/{{ wag_vm_settings.img_name }},if=none,id=drive-usb0,format=raw,cache=none \
+                -device usb-storage,id=drive-usb0,drive=drive-usb0,removable=on"
+

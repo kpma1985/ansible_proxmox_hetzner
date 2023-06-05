@@ -45,7 +45,7 @@ do
     key="$1"
     case $key in
         _TST_)
-        PPLAY="$PRUN_NAME/test.yml"
+        PPLAY="$PRUN_NAME/$TEST_YML"
         PSKIP_TAGS="skip"
         shift
         ;;
