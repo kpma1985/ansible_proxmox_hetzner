@@ -64,6 +64,9 @@
   delegate_to: localhost
   when: ansible_hostname is not defined or ansible_hostname != 'rescue'
 
+- ansible.builtin.setup:
+  when: ansible_hostname is not defined or ansible_hostname != 'rescue'
+
 # needed to avoid system boot locks due to possibly leftover encrypted ext drive
 #OS tries to access it at boot time via fuse for a reason
 - name: HETZNER - Deploy Wipe Drives
