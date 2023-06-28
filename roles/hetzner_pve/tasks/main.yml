@@ -8,13 +8,13 @@
   register: custom_ssh_port
   delegate_to: localhost
 
-- name: Set ansible_port1
+- name: Set ansible_port
   set_fact:
     ansible_port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
   when: not custom_ssh_port.failed
 
 - ansible.builtin.setup:
-  ignore_errors: true
+  ignore_unreachable: true
 
 - ansible.builtin.include_tasks: 00_rescue.yml
   when: hetzner_pve_autorescue
