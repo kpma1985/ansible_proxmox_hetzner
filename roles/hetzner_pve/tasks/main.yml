@@ -14,6 +14,7 @@
   when: not custom_ssh_port.failed
 
 - ansible.builtin.setup:
+  ignore_errors: true
 
 - ansible.builtin.include_tasks: 00_rescue.yml
   when: hetzner_pve_autorescue
