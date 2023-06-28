@@ -16,11 +16,6 @@
 - ansible.builtin.setup:
   ignore_unreachable: true
 
-# - name: Set ansible_hostname when unreachable
-#   set_fact:
-#     ansible_hostname: "_UNREACHABLE_"
-#   when: 
-
 - ansible.builtin.include_tasks: 00_rescue.yml
   when: hetzner_pve_autorescue
 
