@@ -5,7 +5,7 @@
   connection: local
 
 - name: OPNsense Preapare - Install pyhton module for parsing XML
-  pip:ssh_wan_port
+  pip:
     name:
       - lxml
       - pexpect
