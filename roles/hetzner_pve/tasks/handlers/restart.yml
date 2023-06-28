@@ -7,6 +7,6 @@
 - name: Wait for system comming up after unlock
   ansible.legacy.wait_for:
     port: 22
-    host: "{{ inventory_hostname }}"
-    delay: 20
+    host: "{{ ansible_host }}"
+    delay: 60
   delegate_to: localhost
