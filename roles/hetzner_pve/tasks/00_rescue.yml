@@ -17,7 +17,7 @@
 - name: HETZNER - Check for rescue mode
   ansible.builtin.debug:
     msg: "Server not in Rescue mode - Add SSH Key and rebooting..."
-  when: ansible_hostname != 'rescue'
+  when: ansible_hostname is not defined or ansible_hostname != 'rescue'
 
 - name: HETZNER - Add SSH key
   community.hrobot.ssh_key:
@@ -27,7 +27,7 @@
     name: ansible - hetzner_pve
     public_key: "{{ hetzner_pve_ssh_keys.0 }}"
   delegate_to: localhost
-  when: ansible_hostname != 'rescue'
+  when: ansible_hostname is not defined or ansible_hostname != 'rescue'
 
 - name: HETZNER - Get all SSH Keys
   community.hrobot.ssh_key_info:
@@ -45,7 +45,7 @@
       os: linux
       authorized_keys: "{{ ssh_keys.ssh_keys | map(attribute='fingerprint') | list }}"
   delegate_to: localhost
-  when: ansible_hostname != 'rescue'
+  when: ansible_hostname is not defined or ansible_hostname != 'rescue'
 
 - name: HETZNER - Reset SERVER
   community.hrobot.reset:
@@ -54,7 +54,7 @@
     server_number: "{{ ENV_INVENTORY_SRV_NO }}"
     reset_type: hardware
   delegate_to: localhost
-  when: ansible_hostname != 'rescue'
+  when: ansible_hostname is not defined or ansible_hostname != 'rescue'
 
 - name: Wait for system comming up after activating Rescue
   ansible.legacy.wait_for:
@@ -62,7 +62,7 @@
     host: "{{ inventory_hostname }}"
     delay: 10
   delegate_to: localhost
-  when: ansible_hostname != 'rescue'
+  when: ansible_hostname is not defined or ansible_hostname != 'rescue'
 
 # needed to avoid system boot locks due to possibly leftover encrypted ext drive
 #OS tries to access it at boot time via fuse for a reason

@@ -13,10 +13,6 @@
     ansible_port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
   when: not custom_ssh_port.failed
 
-- name: print hostname
-  ansible.builtin.debug:
-    var: ansible_hostname
-
 - ansible.builtin.setup:
   ignore_unreachable: true
 
