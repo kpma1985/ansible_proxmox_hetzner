@@ -133,6 +133,7 @@
 
 - name: DONE
   pause:
+    seconds: 5
     prompt: |
       Installation done.
 
