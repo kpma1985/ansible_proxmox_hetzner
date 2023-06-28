@@ -13,9 +13,9 @@
 #     ansible_port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
 #   when: not custom_ssh_port.failed
 
-- name: Set ansible_port
-  set_fact:
-    ansible_port: 22
+# - name: Set ansible_port
+#   set_fact:
+#     ansible_port: 22
 
 - ansible.builtin.setup:
 
