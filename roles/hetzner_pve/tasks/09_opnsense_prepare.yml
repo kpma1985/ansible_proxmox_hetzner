@@ -5,7 +5,7 @@
   connection: local
 
 - name: OPNsense Preapare - Install pyhton module for parsing XML
-  pip:
+  pip:ssh_wan_port
     name:
       - lxml
       - pexpect
@@ -30,7 +30,7 @@
     state: absent
     regexp: '<trigger_initial_wizard/>'
 
-- name: OPNsense Preapare - Enable port forwarding for Proxmox
+- name: OPNsense Preapare - Enable port forwarding for Proxmox and WAG
   ansible.builtin.lineinfile:
     path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
     insertafter: '</outbound>'
@@ -65,6 +65,22 @@
           <destination>
             <network>(self)</network>
             <port>{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}</port>
+          </destination>
+        </rule>
+        <rule>
+          <protocol>tcp</protocol>
+          <interface>wan</interface>
+          <ipprotocol>inet</ipprotocol>
+          <log>1</log>
+          <target>{{ hetzner_pve_network_lan_ip }}</target>
+          <local-port>22</local-port>
+          <source>
+            <network>(self)</network>
+            <not>1</not>
+          </source>
+          <destination>
+            <network>(self)</network>
+            <port>{{ hetzner_wag.ssh_wan_port }}</port>
           </destination>
         </rule>
 
