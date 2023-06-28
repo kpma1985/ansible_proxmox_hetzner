@@ -1,23 +1,29 @@
 ---
-# - name: Check for SSH Port
-#   wait_for:
-#     host: "{{ inventory_hostname }}"
-#     port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
-#     timeout: 5
-#   ignore_errors: true
-#   register: custom_ssh_port
-#   delegate_to: localhost
+- name: Check for SSH Port
+  wait_for:
+    host: "{{ inventory_hostname }}"
+    port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
+    timeout: 5
+  ignore_errors: true
+  register: custom_ssh_port
+  delegate_to: localhost
 
-# - name: Set ansible_port
-#   set_fact:
-#     ansible_port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
-#   when: not custom_ssh_port.failed
+- name: Set ansible_port
+  set_fact:
+    ansible_port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
+  when: not custom_ssh_port.failed
 
-# - name: Set ansible_port
-#   set_fact:
-#     ansible_port: 48622
+- name: print hostname
+  ansible.builtin.debug:
+    var: ansible_hostname
 
 - ansible.builtin.setup:
+  ignore_unreachable: true
+
+# - name: Set ansible_hostname when unreachable
+#   set_fact:
+#     ansible_hostname: "_UNREACHABLE_"
+#   when: 
 
 - ansible.builtin.include_tasks: 00_rescue.yml
   when: hetzner_pve_autorescue
