@@ -72,7 +72,7 @@
           <interface>wan</interface>
           <ipprotocol>inet</ipprotocol>
           <log>1</log>
-          <target>{{ hetzner_pve_network_lan_ip }}</target>
+          <target>{{ hetzner_wag.lan_ip }}</target>
           <local-port>22</local-port>
           <source>
             <network>(self)</network>
