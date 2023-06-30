@@ -1,7 +1,7 @@
 ---
 - name: Check for SSH Port
   wait_for:
-    host: "{{ inventory_hostname }}"
+    host: "{{ ansible_host }}"
     port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
     timeout: 5
   ignore_errors: true
