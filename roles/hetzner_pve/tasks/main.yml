@@ -1,6 +1,6 @@
 ---
 - dbg:
-  msg: {{ inventory_hostname }} {{ ansible_host }}
+  msg: "{{ inventory_hostname }} {{ ansible_host }}"
 
 - name: Check for SSH Port
   wait_for:
