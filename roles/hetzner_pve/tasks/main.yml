@@ -1,4 +1,7 @@
 ---
+- dbg:
+  msg: {{ ansible_host }}
+
 - name: Check for SSH Port
   wait_for:
     host: "{{ ansible_host }}"
