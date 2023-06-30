@@ -35,7 +35,7 @@
     path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
     insertafter: '</outbound>'
     vars:
-      def_nat_config: |
+      def_config: |
         <rule>
           <protocol>tcp</protocol>
           <interface>wan</interface>
@@ -69,8 +69,8 @@
           </destination>
         </rule>
     line: >
-      {{ def_nat_config }}
-      {{ hetzner_pve_opnsense_nat_settings.portforward_extra }}
+      {{ def_config }}
+      {{ hetzner_pve_opnsense_config.portforward_extra }}
 
 - name: OPNsense Preapare - Update general settings in config.xml
   community.general.xml:
