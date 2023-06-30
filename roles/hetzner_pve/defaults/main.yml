@@ -75,6 +75,9 @@ hetzner_pve_opnsense_vm_settings:
   lan_bridge: vmbr99
   url: https://mirror.fra10.de.leaseweb.net/opnsense/releases/22.7/OPNsense-22.7-OpenSSL-nano-amd64.img.bz2
 
+hetzner_pve_opnsense_nat_settings:
+  portforward_extra: ""
+  
 hetzner_pve_opnsense_settings:
   - system/dnsallowoverride: "1"
   - system/hostname: fw
