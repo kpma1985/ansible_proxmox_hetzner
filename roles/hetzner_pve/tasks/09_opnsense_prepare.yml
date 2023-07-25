@@ -30,6 +30,14 @@
     state: absent
     regexp: '<trigger_initial_wizard/>'
 
+- name: Compile opnsense port forwards xml config
+  template:
+    src: opnsense_port_fwd.j2
+    dest: /tmp/opnsense_cfg_portforwards
+  vars:
+    data: "{{ hetzner_pve_opnsense_config.portforwards }}"
+  delegate_to: localhost
+
 - name: OPNsense Preapare - Enable port forwarding for Proxmox and WAG
   ansible.builtin.lineinfile:
     path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"

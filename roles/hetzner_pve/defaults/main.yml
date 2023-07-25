@@ -65,6 +65,15 @@ hetzner_pve_network_vm_lan_ip: "192.168.49.254"
 hetzner_pve_network_vm_lan_dhcp_from: "192.168.49.100"
 hetzner_pve_network_vm_lan_dhcp_to: "192.168.49.150"
 
+hetzner_pve_opnsense_config:
+  portforwards:
+    - target: "{{ hetzner_pve_network_lan_ip }}"
+      local_port: 8006
+      dest_port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_gui_port }}"
+    - target: "{{ hetzner_pve_network_lan_ip }}"
+      local_port: 22
+      dest_port: "{{ hetzner_pve_setup_opnsense_fwd_proxmox_ssh_port }}"
+
 hetzner_pve_opnsense_vm_settings:
   name: opnsense
   id: 9000
