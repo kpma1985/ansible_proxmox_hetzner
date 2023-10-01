@@ -1,3 +1,9 @@
+
+
+Right now, this playboot does not work due Hetzner updates by the installer script.
+Update comming soon
+
+
 ### Proxmox on Hetzner BareMetal with ansible
 
 I made this project just for fun, it allows you to create a proxmox host on Hetzner BareMetal
