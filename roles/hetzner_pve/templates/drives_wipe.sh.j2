@@ -1,5 +1,9 @@
 #!/bin/bash
-wipefs -a {{ hetzner_pve_main_drive_path}}
+{% for drive in hetzner_pve_drive_paths %}
+wipefs -a {{ drive.path }}
+{% endfor %}
+
 {% for drive in hetzner_pve_ext_drives_encrypt %}
 wipefs -a {{ drive.path }}
 {% endfor %}
+

@@ -29,7 +29,7 @@
 
 - name: Deploy Hetzner installimage config
   ansible.builtin.template:
-    src: setup_debian11.conf.j2
+    src: "setup_{{hetzner_pve_os}}.conf.j2"
     dest: /tmp/setup.conf
     owner: root
     group: root
@@ -56,6 +56,8 @@
 
 - name: Append /tmp/post_install_drives_setup.sh to /tmp/post_install.sh
   shell: cat /tmp/post_install_drives_setup.sh >> /tmp/post_install.sh
+  when: hetzner_pve_swraid == 0 
+
 
 - name: Deploy ssh key
   ansible.builtin.template:
@@ -66,4 +68,4 @@
 
 - name: Disable mdadm
   ansible.builtin.command: "mdadm --stop --scan"
-  when: not hetzner_pve_installed.stat.exists
+  when: (not hetzner_pve_installed.stat.exists) and (hetzner_pve_autorescue)

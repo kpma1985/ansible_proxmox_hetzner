@@ -19,6 +19,7 @@
   when: hetzner_pve_autorescue
 
 - ansible.builtin.include_tasks: 01_os_prepare.yml
+  
 
 - ansible.builtin.include_tasks: 02_os_setup.yml
   when: hetzner_pve_installed.stat.exists == false

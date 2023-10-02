@@ -6,3 +6,7 @@ roles/hetzner_pve/vars
 **/*.swp
 
 **/*.local
+inventory/hosts
+
+group_vars/vmhost/hetzner_pve.yml
+inventory/hosts

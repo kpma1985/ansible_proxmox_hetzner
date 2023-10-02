@@ -8,26 +8,29 @@ hetzner_pve_hetzner_api_pass: secret
 sysctl_config:
   dev.raid.speed_limit_max: 1000
 
+hetzner_pve_os: bullseye
 hetzner_pve_luks_pass: secret
 hetzner_pve_root_pass: secret
 hetzner_pve_ssh_keys: []
 
 # RAID level to use
-hetzner_pve_swraid: 0
-hetzner_pve_main_drive_path: '/dev/sda'
+hetzner_pve_swraid: 1
+hetzner_pve_drive_paths:
+  - '/dev/sda'
+  - '/dev/sdb'
 # encrypt extra drives; only runs in a RAID0 config (hetzner_pve_swraid=0)
 hetzner_pve_ext_drives_encrypt:
-  - path: '/dev/sdb'
-    partition1:
-      path: '/dev/sdb1'
-      crypt_name: 'sdb1_crypt'
-      crypt_path: '/dev/mapper/sdb1_crypt'
-    vg:
-      name: 'vg1'
-    lv:
-      name: 'ext'
-      path: '/dev/vg1/ext'
-      mount: '/mnt/ext'
+  # - path: '/dev/sdc'
+  #   partition1:
+  #     path: '/dev/sdc1'
+  #     crypt_name: 'sdc1_crypt'
+  #     crypt_path: '/dev/mapper/sdc1_crypt'
+  #   vg:
+  #     name: 'vg1'
+  #   lv:
+  #     name: 'ext'
+  #     path: '/dev/vg1/ext'
+  #     mount: '/mnt/ext'
 
 ### ACME - letsencrypt
 hetzner_pve_create_acme: true

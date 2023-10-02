@@ -11,12 +11,12 @@
 
 - name: PROXMOX - Add repository key
   ansible.builtin.get_url:
-    url: https://enterprise.proxmox.com/debian/proxmox-release-bullseye.gpg
-    dest: /etc/apt/trusted.gpg.d/proxmox-release-bullseye.gpg
+    url: "https://enterprise.proxmox.com/debian/proxmox-release-{{hetzner_pve_os}}.gpg"
+    dest: "/etc/apt/trusted.gpg.d/proxmox-release-{{hetzner_pve_os}}.gpg"
 
 - name: PROXMOX - Add repository
   apt_repository:
-    repo: 'deb [arch=amd64] http://download.proxmox.com/debian/pve bullseye pve-no-subscription'
+    repo: "deb [arch=amd64] http://download.proxmox.com/debian/pve {{hetzner_pve_os}} pve-no-subscription"
     state: present
     filename: pve-install-repo
     update_cache: true
@@ -29,6 +29,12 @@
   register: hetzner_pve_proxmox_package_upgrades_reboot
   stat: path=/var/run/reboot-required get_md5=no
   notify: Restart vmhost
+
+
+- name: Disable "externally-managed-environment" 
+  ansible.builtin.file:
+    path: /usr/lib/python3.x/EXTERNALLY-MANAGED
+    state: absent
 
 - meta: flush_handlers
   when: hetzner_pve_proxmox_package_upgrades_reboot.stat.exists

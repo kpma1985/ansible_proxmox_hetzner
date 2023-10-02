@@ -44,6 +44,8 @@
 
 - name: PROXMOX post tasks - Run of XS post installer
   ansible.builtin.shell: /tmp/xs-install-post.sh
+  args:
+    chdir: /tmp
   register: hetzner_pve_xshock_run
   notify: Restart vmhost
   when: not hetzner_pve_xshock_installed.stat.exists

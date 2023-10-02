@@ -1,7 +1,7 @@
 ---
 - name: PROXMOX PBS - Add PBS repository
   apt_repository:
-    repo: 'deb http://download.proxmox.com/debian/pbs bullseye pbs-no-subscription'
+    repo: "deb http://download.proxmox.com/debian/pbs {{ hetzner_pve_os }} pbs-no-subscription"
     state: present
     filename: pbs-install-repo
     update_cache: true

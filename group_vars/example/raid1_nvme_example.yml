@@ -1,0 +1,45 @@
+---
+
+hetzner_pve_swraid: 1
+
+### Hetzner API - https://robot.hetzner.com/preferences/index
+hetzner_pve_autorescue: true
+hetzner_pve_hetzner_api_user: 'XXXXXXXX'
+hetzner_pve_hetzner_api_pass: XXXXXX
+
+hetzner_pve_luks_pass: "secret123"
+hetzner_pve_root_pass: "secret123"
+hetzner_pve_ssh_keys: 
+  - ssh-ed25519 AAAAC3Nxxxxxxxxxxxxxxxxxxx
+
+
+hetzner_pve_acme_mail: admin@example.com
+hetzner_pve_acme_domain: node01.example.com
+hetzner_pve_drive_paths:
+ - "/dev/nvme0n1"
+ - "/dev/nvme1n1"
+
+
+hetzner_pve_opnsense_settings:
+  - system/dnsallowoverride: "1"
+  - system/hostname: fw
+  - system/domain: example.com
+  - system/webgui/noantilockout: "1"
+  - system/ssh/enabled: enabled
+  - system/ssh/group: admins
+  - system/ssh/interfaces: lan,wan
+  - system/ssh/passwordauth: "1"
+  - system/ssh/permitrootlogin: "1"
+  - system/ssh/port: "{{ hetzner_pve_setup_opnsense_ssh_port }}"
+  - system/ssh/shell: "/bin/sh"
+  - interfaces/wan/if: vtnet0
+  - interfaces/wan/ipaddr: dhcp
+  - interfaces/lan/if: vtnet1
+
+
+### Setup StorageBox as Mount
+hetzner_pve_storagebox_setup: false
+hetzner_pve_storagebox_server:
+  - name: XXXXXX.your-storagebox.de
+    user: XXXXXX
+    pass: secret

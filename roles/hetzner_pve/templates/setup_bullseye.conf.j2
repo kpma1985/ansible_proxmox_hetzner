@@ -1,18 +1,22 @@
 CRYPTPASSWORD {{ hetzner_pve_luks_pass }}
+CRYPT 1
 
-DRIVE1 {{ hetzner_pve_main_drive_path }}
-#DRIVE2 /dev/sdb
+{% for drive in hetzner_pve_drive_paths %}
+DRIVE{{ loop.index }} {{ drive }}
+{% endfor %}
 
-#DRIVE1 /dev/sda
-#DRIVE2 /dev/sdb
-
+SWRAIDLEVEL 1
 SWRAID {{ hetzner_pve_swraid }}
 
 BOOTLOADER grub
 HOSTNAME {{ inventory_hostname }}
 
+IPV4_ONLY yes
+
+USE_KERNEL_MODE_SETTING yes
+
 PART /boot/efi esp 256M
 PART /boot ext4 2G
 PART /     ext4 all crypt
-IMAGE /root/.oldroot/nfs/images/Debian-stable-amd64-base.tar.gz
+IMAGE /root/images/Debian-bullseye-latest-amd64-base.tar.gz
 SSHKEYS_URL /tmp/authorized_keys
