@@ -5,4 +5,4 @@
 ansible_ssh_common_args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ControlMaster=auto -o ControlPersist=60s"
 
 [vmhost]
-node02.ddos.care ansible_host=65.109.66.104  ENV_INVENTORY_SRV_NO=2177977
+node02.XXX ansible_host=XXXX ENV_INVENTORY_SRV_NO=XXXX
