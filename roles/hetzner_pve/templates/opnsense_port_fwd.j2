@@ -1,0 +1,18 @@
+{% for fwd in data %}
+<rule>
+    <protocol>tcp</protocol>
+    <interface>wan</interface>
+    <ipprotocol>inet</ipprotocol>
+    <log>1</log>
+    <target>{{ fwd.target }}</target>
+    <local-port>{{ fwd.local_port }}</local-port>
+    <source>
+        <network>(self)</network>
+        <not>1</not>
+    </source>
+    <destination>
+        <network>(self)</network>
+        <port>{{ fwd.dest_port }}</port>
+    </destination>
+</rule>
+{% endfor %}

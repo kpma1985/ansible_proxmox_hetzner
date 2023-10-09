@@ -38,7 +38,39 @@
     data: "{{ hetzner_pve_opnsense_config.portforwards }}"
   delegate_to: localhost
 
-- name: OPNsense Preapare - Enable port forwarding for Proxmox and WAG
+- name: compute port forwards for WAG_CTs
+  set_fact:
+    tmp_wagct_port_forwards: "{{ tmp_wagct_port_forwards | default([]) + [{
+      'target': '{{ hetzner_wag.lan_ip }}',
+      'local_port': common.wagct.base_www_port + offset,
+      'dest_port': common.wagct.base_www_port + offset
+      }, {
+      'target': '{{ hetzner_wag.lan_ip }}',
+      'local_port': common.wagct.base_svc_port + offset,
+      'dest_port': common.wagct.base_svc_port + offset
+      }, {
+      'target': '{{ hetzner_wag.lan_ip }}',
+      'local_port': common.wagct.base_svc_tunnel_port + offset,
+      'dest_port': common.wagct.base_svc_tunnel_port + offset
+      }, {
+      'target': '{{ hetzner_wag.lan_ip }}',
+      'local_port': common.wagct.base_wg_port + offset,
+      'dest_port': common.wagct.base_wg_port + offset
+      }] }}"
+  loop: "{{ range(0, common.wagct.count * 1000, 1000) }}"
+  loop_control:
+    loop_var: offset
+  delegate_to: localhost
+  
+- name: Compile opnsense port forwards xml config
+  template:
+    src: opnsense_port_fwd.j2
+    dest: /tmp/opnsense_cfg_portforwards
+  vars:
+    data: "{{ hetzner_pve_opnsense_config.portforwards + tmp_wagct_port_forwards }}"
+  delegate_to: localhost
+
+- name: OPNsense Preapare - Enable port forwarding for Proxmox and WAG_VM and WAG_CTs
   ansible.builtin.lineinfile:
     path: "/tmp/qemu_{{ hetzner_pve_opnsense_vm_settings.id }}_vfat/conf/config.xml"
     insertafter: '</outbound>'
