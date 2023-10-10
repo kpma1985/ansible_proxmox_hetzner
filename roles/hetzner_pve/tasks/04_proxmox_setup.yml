@@ -10,6 +10,9 @@
   with_dict: '{{ sysctl_config }}'
   when: hetzner_pve_proxmox_package_upgrades_reboot.stat.exists
 
+- name: upgrade
+  shell: sudo aptitude update && sudo aptitude upgrade
+
 - name: fix
   shell: apt -q -y purge firmware-bnx2x firmware-realtek firmware-linux firmware-linux-free firmware-linux-nonfree
 
