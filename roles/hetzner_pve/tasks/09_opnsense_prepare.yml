@@ -45,17 +45,7 @@
       'target': '{{ hetzner_wag.lan_ip }}',
       'local_port': common.wag_ct.base_www_port + offset,
       'dest_port': common.wag_ct.base_www_port + offset
-     }, 
-     {
-      'target': '{{ hetzner_wag.lan_ip }}',
-      'local_port': common.wag_ct.base_svc_port + offset,
-      'dest_port': common.wag_ct.base_svc_port + offset
      },
-     {
-      'target': '{{ hetzner_wag.lan_ip }}',
-      'local_port': common.wag_ct.base_svc_tunnel_port + offset,
-      'dest_port': common.wag_ct.base_svc_tunnel_port + offset
-      },
      {
       'target': '{{ hetzner_wag.lan_ip }}',
       'local_port': common.wag_ct.base_wg_port + offset,
